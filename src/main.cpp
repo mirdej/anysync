@@ -2,6 +2,7 @@
 #include "WiFi.h"
 #include "ANA_Pins.h"
 #include "ANA_Audio.h"
+#include "ANA_Clock.h"
 #include "SPI.h"
 #include "SD.h"
 #include "FS.h"
@@ -28,11 +29,13 @@ void setup()
   SPI.setFrequency(1000000);
   Serial.begin(115200);
   SD.begin(PIN_SD_CS);
-logger.begin();
+  logger.begin();
   
   audioInit();
   audioSetVolume(15);
   log_i("current volume is: %d", audioGetVolume());
+
+  clock_init();
 }
 
 
@@ -65,10 +68,12 @@ void event() {
 
 void loop()
 {
-  static long last;
+ static long last;
   if (millis()-last > 4000) {
     last = millis();
-    audioConnecttoSD("/samples/007.wav");
-     event();
-  }
+
+    log_v("millis: %d, mymillis %d", millis(), clock_millis);
+ /*    audioConnecttoSD("/samples/007.wav");
+     event(); */
+  } 
 }
