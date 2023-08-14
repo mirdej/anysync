@@ -1,13 +1,14 @@
 #include "ANA_Audio.h"
-
+#include "ANA_Tasks.h"
 
 Audio audio;
+
+TaskHandle_t audio_task_handle;
 
 audioMessage audioTxMessage, audioRxMessage;
 
 QueueHandle_t audioSetQueue = NULL;
 QueueHandle_t audioGetQueue = NULL;
-
 
 void CreateQueues()
 {
@@ -27,8 +28,7 @@ void audioTask(void *parameter)
     } // endless loop
   }
 
-
-log_v("Set Audio GPIOS");
+  log_v("Set Audio GPIOS");
   pinMode(PIN_MUTE_PCM, OUTPUT);
   digitalWrite(PIN_MUTE_PCM, HIGH);
   pinMode(PIN_HP_GAIN_0, OUTPUT);
@@ -93,9 +93,9 @@ void audioInit()
       "audioplay",           /* Name of the task */
       5000,                  /* Stack size in words */
       NULL,                  /* Task input parameter */
-      2 | portPRIVILEGE_BIT, /* Priority of the task */
-      NULL,                  /* Task handle. */
-      1                      /* Core where the task should run */
+      AUDIO_TASK_PRIORITY | portPRIVILEGE_BIT, /* Priority of the task */
+      &audio_task_handle,                  /* Task handle. */
+      AUDIO_TASK_CORE                      /* Core where the task should run */
   );
 }
 

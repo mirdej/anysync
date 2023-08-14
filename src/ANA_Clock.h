@@ -28,3 +28,4 @@ extern uint32_t next_event_ms;
 extern hw_timer_t *ms_timer ;
 
 bool clock_init();
+uint32_t get_clock_millis();
