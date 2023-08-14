@@ -34,6 +34,9 @@ unsigned long gpsPulseTimeMicrosLast = 0;
 // interrupt service for 1PPS from NEO6M GPS
 // https://www.arduino.cc/reference/en/language/functions/external-interrupts/attachinterrupt/
 
+uint32_t clock_seconds;
+uint32_t clock_millis;
+
 //----------------------------------------------------------------------------------------
 void IRAM_ATTR gps_pulse_interrupt(void)
 {
@@ -45,15 +48,14 @@ void IRAM_ATTR gps_pulse_interrupt(void)
 }
 //----------------------------------------------------------------------------------------
 
-
-
-String int2digit3(uint32_t msec) {
-  if (msec >= 100) return ( String(msec));
-  if (msec >= 10) return ("0" + String(msec));
-  return ("00" + String(msec));
+String int2digit3(uint32_t msec)
+{
+    if (msec >= 100)
+        return (String(msec));
+    if (msec >= 10)
+        return ("0" + String(msec));
+    return ("00" + String(msec));
 }
-
-
 
 // UTC by TinyGPS++ points to the rising edge of PPS according to NEO6M reference manual
 int i = 0;
@@ -63,7 +65,6 @@ void getGPSInfo()
     if (!(i % GPSTIMESET))
     {
         if (gps.location.isValid() && gps.time.isValid() && (Year > 2017))
-        // check if GPS is fixed
         {
 
             byte Month = gps.date.month();
@@ -86,30 +87,11 @@ void getGPSInfo()
             gpsOffsetMillis = gpsEpochTimeMillis - gpsPulseTimeMillis;
             struct timeval now = {.tv_sec = t};
             settimeofday(&now, NULL); // not used in this system
-            Serial.printf("GPS Epochtime= %d ", gpsEpochTime);
-            Serial.print(" offset=");
-            Serial.print(gpsOffsetMillis);
-            Serial.printf(" UTC time: %s", asctime(&tm));
-
             struct tm *ptm;
             t = time(NULL);
             ptm = localtime(&t);
 
-            uint32_t high;
-            high = gpsEpochTime + gpsOffsetMillis / 1000;
-            String payload = "{";
-            payload += "\"ts\":";
-            payload += high;
-            payload += int2digit3(gpsOffsetMillis % 1000);
-            payload += ",\"values\":{ ";
-            payload += "\"offset\": ";
-            payload += gpsOffsetMillis;
-            payload += "}}";
-            Serial.println(payload);
-            // turn on/off LED
-            digitalWrite(GPIO_NUM_2, HIGH);
-            delay(50);
-            digitalWrite(GPIO_NUM_2, LOW);
+            clock_seconds = gpsEpochTime + gpsOffsetMillis / 1000;
         }
         else
         {
@@ -140,11 +122,6 @@ void gps_task(void *p)
             portENTER_CRITICAL(&mux);
             GPS_PulseCount--;
             portEXIT_CRITICAL(&mux);
-
-            Serial.print("GPS 1PPS pulse on time (msec) ");
-            Serial.print(gpsPulseTimeMillis);
-            Serial.print(" jitter (usec) ");
-            Serial.println(gpsPulseTimeMicros - gpsPulseTimeMicrosLast - 1000000);
             gpsPulseTimeMicrosLast = gpsPulseTimeMicros;
         }
 
@@ -209,7 +186,3 @@ bool clock_init(void)
     return 1;
 }
 
-void stopClock(void)
-{
-    // detachInterrupt(digitalPinToInterrupt(PIN_GPS_1PPS));
-}
