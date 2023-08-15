@@ -18,8 +18,11 @@ void ui_task(void *p)
             button_state = temp;
             if (button_state) {
                 log_v("SD Card Removed");
+                SD.end();
             } else  {
                 log_v("SD Card Inserted");
+                  SD.begin(PIN_SD_CS);
+
             }
         }
 
