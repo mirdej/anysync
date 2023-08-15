@@ -34,8 +34,6 @@ unsigned long gpsPulseTimeMicrosLast = 0;
 // interrupt service for 1PPS from NEO6M GPS
 // https://www.arduino.cc/reference/en/language/functions/external-interrupts/attachinterrupt/
 
-uint32_t clock_seconds;
-uint32_t clock_millis;
 
 //----------------------------------------------------------------------------------------
 void IRAM_ATTR gps_pulse_interrupt(void)

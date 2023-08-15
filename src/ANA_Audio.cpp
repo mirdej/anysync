@@ -141,9 +141,10 @@ bool audioConnecttoSD(const char *filename)
   audioMessage RX = transmitReceive(audioTxMessage);
   return RX.ret;
 }
-
+/* 
 void audio_info(const char *info)
 {
   Serial.print("info        ");
   Serial.println(info);
 }
+ */
