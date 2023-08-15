@@ -17,6 +17,7 @@
 #include "ANA_Display.h"
 #include "ANA_UI.h"
 #include "ANA_Print.h"
+#include "ANA_MIDIFile.h"
 #include "SPI.h"
 #include "SD.h"
 #include "FS.h"
