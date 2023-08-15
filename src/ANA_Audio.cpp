@@ -91,7 +91,7 @@ void audioInit()
   xTaskCreatePinnedToCore(
       audioTask,             /* Function to implement the task */
       "audioplay",           /* Name of the task */
-      5000,                  /* Stack size in words */
+      AUDIO_TASK_STACK_SIZE,                  /* Stack size in words */
       NULL,                  /* Task input parameter */
       AUDIO_TASK_PRIORITY | portPRIVILEGE_BIT, /* Priority of the task */
       &audio_task_handle,                  /* Task handle. */

@@ -39,12 +39,13 @@ void setup()
   Serial.begin(115200);
 
   delay(1000); // prevent upload errors if program crashes esp
+  SPI.begin(PIN_SCK, PIN_MISO, PIN_MOSI);
+  SPI.setFrequency(1000000);
   sd_card_present = SD.begin(PIN_SD_CS);
+
   init_display();
   delay(2000); // prevent upload errors if program crashes esp
 
-  SPI.begin(PIN_SCK, PIN_MISO, PIN_MOSI);
-  SPI.setFrequency(1000000);
   Serial.begin(115200);
   logger.begin();
 
@@ -54,6 +55,8 @@ void setup()
   clock_init();
   ui_begin();
   sync_file.begin();
+
+  print_task_stats();
 }
 
 //========================================================================================
@@ -62,15 +65,17 @@ void setup()
 
 void loop()
 {
-  static long last;
-  if (millis() - last > 5000)
-  {
-    /*     last = millis();
+  uint32_t now = rtc.getEpoch();
 
-        print_satellites();
-        print_time();
-        log_v("Millis since last pulse %d", millis() - gpsPulseTimeMillis); */
-    // print_stats();
+  if (sync_file._isEOF)
+  {
+    if (show_start > 0)
+    {
+      if (now >= show_start)
+      {
+        sync_file.start();
+      }
+    }
   }
-  delay(20);
+  delay(1);
 }

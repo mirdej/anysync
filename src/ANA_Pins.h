@@ -24,6 +24,7 @@
 #define PIN_BATT_MON 8
 
 #define PIN_MIDI_TX 10
+#define PIN_BTN 11
 //#define PIN_RTC_1PPS 11
 #define PIN_GPS_RST 12          // DO NOT USE
 #define PIN_SCL 13

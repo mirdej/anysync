@@ -13,7 +13,8 @@ boolean sd_card_present;
 
 TaskHandle_t display_task_handle;
 String show_name = "Undefined";
-unsigned long show_start = -1;
+unsigned long show_start = 0;
+unsigned long show_end = 0;
 std::queue<String> display_messages;
 
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0,
@@ -136,8 +137,9 @@ void display_task(void *p)
             time = display_messages.front();
             display_messages.pop();
         }
-        else if (!sd_card_present) {
-                time = "NO SDCARD";
+        else if (!sd_card_present)
+        {
+            time = "NO SDCARD";
         }
         else
         {
@@ -148,19 +150,21 @@ void display_task(void *p)
             }
             else
             {
+                if (show_start == 0)
+                {
+                    struct tm tm; // check epoch time at https://www.epochconverter.com/
+                    tm.tm_year = rtc.getYear() - 1900;
+                    tm.tm_mon = rtc.getMonth();
+                    tm.tm_mday = rtc.getDay();
+                    tm.tm_hour = 15;
+                    tm.tm_min = 0;
+                    tm.tm_sec = 0;
+                    tm.tm_isdst = -1; // disable summer time
+                    time_t t = mktime(&tm);
 
-                struct tm tm; // check epoch time at https://www.epochconverter.com/
-                tm.tm_year = rtc.getYear() - 1900;
-                tm.tm_mon = rtc.getMonth();
-                tm.tm_mday = rtc.getDay();
-                tm.tm_hour = 15;
-                tm.tm_min = 0;
-                tm.tm_sec = 0;
-                tm.tm_isdst = -1; // disable summer time
-                time_t t = mktime(&tm);
-
-                show_start = t;
-                log_v("SHowstart = %d NOW = %d", show_start, time_now);
+                    show_start = t;
+                }
+                //         log_v("SHowstart = %d NOW = %d", show_start, time_now);
                 long difftime;
                 time = "";
 
@@ -189,7 +193,7 @@ void display_task(void *p)
         u8g2.setCursor(ALIGN_CENTER(time.c_str()), 48);
         u8g2.print(time);
         u8g2.sendBuffer();
-        log_v("Display udate in %dms", millis() - start);
+        //    log_v("Display udate in %dms", millis() - start);
 
         vTaskDelay(DISPLAY_TASK_DELAY / portTICK_RATE_MS);
     }
@@ -199,11 +203,11 @@ void init_display()
 {
 
     xTaskCreatePinnedToCore(
-        display_task,          /* Function to implement the task */
-        "DISPLAY Task",        /* Name of the task */
-        10000,                 /* Stack size in words */
-        NULL,                  /* Task input parameter */
-        DISPLAY_TASK_PRIORITY, /* Priority of the task */
-        &display_task_handle,  /* Task handle. */
-        DISPLAY_TASK_CORE);    /* Core where the task should run */
+        display_task,            /* Function to implement the task */
+        "DISPLAY Task",          /* Name of the task */
+        DISPLAY_TASK_STACK_SIZE, /* Stack size in words */
+        NULL,                    /* Task input parameter */
+        DISPLAY_TASK_PRIORITY,   /* Priority of the task */
+        &display_task_handle,    /* Task handle. */
+        DISPLAY_TASK_CORE);      /* Core where the task should run */
 }

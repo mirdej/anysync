@@ -9,7 +9,6 @@
 #define SHOW_MIDIFILE "/show.mid"
 #define SHOW_SYNCFILE "/show.sync"
 
-
 extern uint8_t midi_channel;
 
 typedef struct
@@ -39,3 +38,6 @@ public:
 private:
 };
 
+void sync_file_task (void * p);
+
+extern SyncFile sync_file;

@@ -1,8 +1,8 @@
 #include "ANA_Syncfile.h"
-
+#include "ANA_Tasks.h"
 
 uint8_t midi_channel = 0;
-
+TaskHandle_t sync_file_task_handle;
 
 //----------------------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ void SyncFile::begin(void)
 {
     Serial1.begin(31250, SERIAL_8N1, -1, 10);
 
-    _file = SD.open("show.sync", FILE_READ);
+    _file = SD.open(SHOW_SYNCFILE, FILE_READ);
     if (!_file)
     {
         log_e("Cannot open Sync file");
@@ -26,12 +26,20 @@ void SyncFile::begin(void)
 
     for (int i = 0; i < 4; i++)
     {
-        t = t << 8;
-        t |= _file.read();
+        t |= (_file.read() << (i * 8));
     }
     log_v("Read: %d", t);
     _last_trigger = t;
     _isEOF = true;
+
+    xTaskCreatePinnedToCore(
+        sync_file_task,            /* Function to implement the task */
+        "SYNCFILE Task",           /* Name of the task */
+        SYNC_FILE_TASK_STACK_SIZE, /* Stack size in words */
+        NULL,                      /* Task input parameter */
+        SYNC_FILE_TASK_PRIORITY,   /* Priority of the task */
+        &sync_file_task_handle,    /* Task handle. */
+        SYNC_FILE_TASK_CORE);      /* Core where the task should run */
 }
 
 //----------------------------------------------------------------------------------------
@@ -66,8 +74,7 @@ boolean SyncFile::getNext()
     uint32_t t = 0;
     for (int i = 0; i < 4; i++)
     {
-        t = t << 8;
-        t |= _file.read();
+        t |= (_file.read() << (i * 8));
     }
 
     _next_trigger = t;
@@ -102,7 +109,7 @@ uint32_t SyncFile::run(void)
         Serial1.write(_next_event.note);
         Serial1.write(_next_event.velocity);
 
-        log_v("cmd %02x %02x", _next_event.cmd, (_next_event.cmd & 0xF0) == 0x90);
+    //    log_v("cmd %02x %02x", _next_event.cmd, (_next_event.cmd & 0xF0) == 0x90);
 
         if ((_next_event.cmd & 0xF0) == 0x90)
         { // note_on
@@ -131,8 +138,22 @@ uint32_t SyncFile::run(void)
 }
 
 //----------------------------------------------------------------------------------------
+//                                        SYNC FILE TASK
+void sync_file_task(void *p)
+{
+    log_v("Started SYFLOOP");
+    while (1)
+    {
+        uint32_t delaytime = sync_file.run();
+        //  log_v("Delay time %d", delaytime);
+        if (delaytime > SYNC_FILE_TASK_DELAY)
+            delaytime = SYNC_FILE_TASK_DELAY;
+        vTaskDelay(delaytime / portTICK_PERIOD_MS);
+    }
+}
+//----------------------------------------------------------------------------------------
 //                                        Check Sync File
-/* 
+/*
 void check_sync_file()
 {
     File f;
@@ -157,7 +178,7 @@ void check_sync_file()
         while (1)
         {
             ;
-        } 
+        }
     }
 
     // check if midi file has changed

@@ -13,3 +13,6 @@ void makeversion(char const *date, char const *time, char *buff)
   sscanf(time, "%d:%d:%d", &hour, &min, &sec);
   sprintf(buff, "%d.%02d%02d.%02d", year, month, day, hour);
 }
+
+
+

@@ -172,7 +172,7 @@ bool clock_init(void)
     xTaskCreatePinnedToCore(
         gps_task,          /* Function to implement the task */
         "GPS Task",        /* Name of the task */
-        10000,             /* Stack size in words */
+        GPS_TASK_STACK_SIZE,             /* Stack size in words */
         NULL,              /* Task input parameter */
         GPS_TASK_PRIORITY, /* Priority of the task */
         &gps_task_handle,  /* Task handle. */

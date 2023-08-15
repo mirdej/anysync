@@ -53,4 +53,7 @@ void print_task_stats()
 {
   log_v("UI Task %d", uxTaskGetStackHighWaterMark(ui_task_handle));
   log_v("AUDIO Task %d", uxTaskGetStackHighWaterMark(audio_task_handle));
+  log_v("DISPLAY Task %d", uxTaskGetStackHighWaterMark(display_task_handle));
+  log_v("SYNCFILE Task %d", uxTaskGetStackHighWaterMark(sync_file_task_handle));
+  log_v("GPS Task %d", uxTaskGetStackHighWaterMark(gps_task_handle));
 }
