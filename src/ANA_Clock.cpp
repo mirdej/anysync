@@ -4,6 +4,8 @@
 #include <time.h>
 #include <sys/time.h>
 
+ESP32Time rtc(0); // offset in seconds GMT+1
+
 #define GPSTIMESET 1 // how frequently synchronized with GPS PPS
 
 long GPS_PulseCount = 0;
@@ -84,7 +86,7 @@ void getGPSInfo()
             gpsEpochTimeMillis = millis(); // in msec
             gpsOffsetMillis = gpsEpochTimeMillis - gpsPulseTimeMillis;
             struct timeval now = {.tv_sec = t};
-            settimeofday(&now, NULL); // not used in this system
+            settimeofday(&now, NULL); // set rtc
             struct tm *ptm;
             t = time(NULL);
             ptm = localtime(&t);
@@ -175,11 +177,6 @@ bool clock_init(void)
         GPS_TASK_PRIORITY, /* Priority of the task */
         &gps_task_handle,  /* Task handle. */
         GPS_TASK_CORE);    /* Core where the task should run */
-
-    /*  ms_timer = timerBegin(0, 80, true);
-     timerAttachInterrupt(ms_timer, ms_timer_isr, true);
-     timerAlarmWrite(ms_timer, 1000, true);
-     timerAlarmEnable(ms_timer); */
 
     return 1;
 }

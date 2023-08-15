@@ -21,3 +21,11 @@ extern TaskHandle_t gps_task_handle;
 #define GPS_TASK_PRIORITY 2
 #define GPS_TASK_CORE 0
 #define GPS_TASK_DELAY   1
+
+
+// +-----------------------------------------------------------------------+
+//                                                      Display Task
+extern TaskHandle_t display_task_handle;
+#define DISPLAY_TASK_PRIORITY 1
+#define DISPLAY_TASK_CORE 0
+#define DISPLAY_TASK_DELAY   1000

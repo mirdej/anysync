@@ -7,24 +7,23 @@
 
 ----------------------------------------------------------------------------------------*/
 
-
-
-
 #include "Arduino.h"
+#include <ESP32Time.h>
+
 #include "WiFi.h"
 #include "ANA_Pins.h"
 #include "ANA_Audio.h"
 #include "ANA_Clock.h"
+#include "ANA_Display.h"
 #include "ANA_UI.h"
 #include "ANA_Print.h"
 #include "SPI.h"
 #include "SD.h"
 #include "FS.h"
 #include <ESPLogger.h>
-
+#include "ANA_Utils.h"
 
 ESPLogger logger("/log.txt", SD);
-
 
 //========================================================================================
 //----------------------------------------------------------------------------------------
@@ -32,9 +31,13 @@ ESPLogger logger("/log.txt", SD);
 
 void setup()
 {
+  makeversion(__DATE__, __TIME__, version);
+
   Serial.begin(115200);
 
-  delay(5000); // prevent upload errors if program crashes esp
+  delay(1000); // prevent upload errors if program crashes esp
+  init_display();
+  delay(2000); // prevent upload errors if program crashes esp
 
   SPI.begin(PIN_SCK, PIN_MISO, PIN_MOSI);
   SPI.setFrequency(1000000);
@@ -62,8 +65,8 @@ void loop()
 
     print_satellites();
     print_time();
-    log_v("Millis since last pulse %d", millis()-gpsPulseTimeMillis);
-   // print_stats();
+    log_v("Millis since last pulse %d", millis() - gpsPulseTimeMillis);
+    // print_stats();
 
     audioConnecttoSD("/samples/001.wav");
   }

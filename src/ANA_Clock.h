@@ -1,11 +1,12 @@
 #include "Arduino.h"
 #include <ESPLogger.h>
 #include <TinyGPSPlus.h>
+#include <ESP32Time.h>
 
 #pragma once
 
 extern ESPLogger logger;
-
+extern ESP32Time rtc;
 
 
 
