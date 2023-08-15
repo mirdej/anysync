@@ -18,6 +18,7 @@
 #include "ANA_UI.h"
 #include "ANA_Print.h"
 #include "ANA_MIDIFile.h"
+#include "ANA_Syncfile.h"
 #include "SPI.h"
 #include "SD.h"
 #include "FS.h"
@@ -25,6 +26,7 @@
 #include "ANA_Utils.h"
 
 ESPLogger logger("/log.txt", SD);
+SyncFile sync_file;
 
 //========================================================================================
 //----------------------------------------------------------------------------------------
@@ -37,13 +39,13 @@ void setup()
   Serial.begin(115200);
 
   delay(1000); // prevent upload errors if program crashes esp
+  sd_card_present = SD.begin(PIN_SD_CS);
   init_display();
   delay(2000); // prevent upload errors if program crashes esp
 
   SPI.begin(PIN_SCK, PIN_MISO, PIN_MOSI);
   SPI.setFrequency(1000000);
   Serial.begin(115200);
-  SD.begin(PIN_SD_CS);
   logger.begin();
 
   audioInit();
@@ -51,6 +53,7 @@ void setup()
 
   clock_init();
   ui_begin();
+  sync_file.begin();
 }
 
 //========================================================================================
@@ -62,13 +65,12 @@ void loop()
   static long last;
   if (millis() - last > 5000)
   {
-    last = millis();
+    /*     last = millis();
 
-    print_satellites();
-    print_time();
-    log_v("Millis since last pulse %d", millis() - gpsPulseTimeMillis);
+        print_satellites();
+        print_time();
+        log_v("Millis since last pulse %d", millis() - gpsPulseTimeMillis); */
     // print_stats();
-
-    audioConnecttoSD("/samples/001.wav");
   }
+  delay(20);
 }

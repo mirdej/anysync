@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include "ANA_Tasks.h"
 #include "ANA_Clock.h"
+#include "ANA_Display.h"
 
 TaskHandle_t ui_task_handle;
 
@@ -23,12 +24,13 @@ void ui_task(void *p)
             if (button_state)
             {
                 log_v("SD Card Removed");
+                sd_card_present = 0;
                 SD.end();
             }
             else
             {
                 log_v("SD Card Inserted");
-                SD.begin(PIN_SD_CS);
+                sd_card_present = SD.begin(PIN_SD_CS);
             }
         }
 

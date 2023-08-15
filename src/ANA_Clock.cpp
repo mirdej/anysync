@@ -181,3 +181,6 @@ bool clock_init(void)
     return 1;
 }
 
+uint32_t get_clock_millis(){
+    return clock_seconds * 1000 + millis()- gpsLasttime;
+}

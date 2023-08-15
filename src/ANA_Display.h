@@ -9,6 +9,8 @@
 #include <queue>
 #include <U8g2lib.h>
 
+boolean sd_card_present;
+
 TaskHandle_t display_task_handle;
 String show_name = "Undefined";
 unsigned long show_start = -1;
@@ -133,6 +135,9 @@ void display_task(void *p)
         {
             time = display_messages.front();
             display_messages.pop();
+        }
+        else if (!sd_card_present) {
+                time = "NO SDCARD";
         }
         else
         {
