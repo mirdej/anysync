@@ -7,6 +7,9 @@
 
 ----------------------------------------------------------------------------------------*/
 
+
+
+
 #include "Arduino.h"
 #include "WiFi.h"
 #include "ANA_Pins.h"
@@ -19,7 +22,9 @@
 #include "FS.h"
 #include <ESPLogger.h>
 
+
 ESPLogger logger("/log.txt", SD);
+
 
 //========================================================================================
 //----------------------------------------------------------------------------------------
@@ -56,7 +61,9 @@ void loop()
     last = millis();
 
     print_satellites();
-    print_stats();
+    print_time();
+    log_v("Millis since last pulse %d", millis()-gpsPulseTimeMillis);
+   // print_stats();
 
     audioConnecttoSD("/samples/001.wav");
   }

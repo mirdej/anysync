@@ -7,7 +7,7 @@
 extern TaskHandle_t ui_task_handle;
 #define UI_TASK_PRIORITY 0
 #define UI_TASK_CORE LOOP_TASK_CORE
-#define UI_TASK_DELAY   50
+#define UI_TASK_DELAY   20
 
 // +-----------------------------------------------------------------------+
 //                                                      Audio Task
