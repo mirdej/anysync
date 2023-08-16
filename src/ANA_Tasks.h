@@ -13,7 +13,7 @@ extern TaskHandle_t ui_task_handle;
 // +-----------------------------------------------------------------------+
 //                                                      Audio Task
 extern TaskHandle_t audio_task_handle;
-#define AUDIO_TASK_PRIORITY 4
+#define AUDIO_TASK_PRIORITY 9
 #define AUDIO_TASK_CORE 1
 #define AUDIO_TASK_STACK_SIZE 12000
 

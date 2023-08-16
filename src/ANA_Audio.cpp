@@ -11,6 +11,7 @@ int sample_to_play;
 
 void audioTask(void *parameter)
 {
+  long last_play_millis;
   log_v("Set Audio GPIOS");
   pinMode(PIN_MUTE_PCM, OUTPUT);
   digitalWrite(PIN_MUTE_PCM, HIGH);
@@ -26,15 +27,22 @@ void audioTask(void *parameter)
   out = new AudioOutputI2S();
   out->SetGain(0.5);
   out->SetPinout(PIN_BCLK, PIN_LRCLK, PIN_DATA);
+#define MIN_AUDIO_DELAY 20
 
   while (true)
   {
     if (sample_to_play > 0)
     {
 
-      uint8_t n = sample_to_play;
+      long t = millis() - last_play_millis;
+      if (t < MIN_AUDIO_DELAY)
+      {
+        vTaskDelay(MIN_AUDIO_DELAY - t / portTICK_PERIOD_MS);
+      }
+      last_play_millis = millis();
+
       char buf[17];
-      sprintf(buf, "/samples/%03d.wav", n);
+      sprintf(buf, "/samples/%03d.wav", sample_to_play);
       file = new AudioFileSourceSD(buf);
       //  log_v("File loaded");
       if (wav->isRunning())
@@ -42,7 +50,7 @@ void audioTask(void *parameter)
         wav->stop();
       }
       wav->begin(file, out);
-      wav->loop();
+      //      wav->loop();
       sample_to_play = 0;
       digitalWrite(PIN_BTN_1, HIGH);
     }
@@ -54,10 +62,7 @@ void audioTask(void *parameter)
         wav->stop();
       }
     }
-    else
-    {
-      vTaskDelay(100 / portTICK_PERIOD_MS);
-    }
+    vTaskDelay(1 / portTICK_PERIOD_MS);
   }
 }
 
