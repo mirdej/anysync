@@ -144,7 +144,8 @@ void display_task(void *p)
         else
         {
             long time_now = rtc.getEpoch();
-            if (time_now < 1579494213UL)
+           // if (time_now < 1579494213UL)
+           if (!clock_is_set)
             {
                 time = "NO TIME";
             }

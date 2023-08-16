@@ -29,6 +29,8 @@
 ESPLogger logger("/log.txt", SD);
 SyncFile sync_file;
 String hostname;
+bool clock_was_set = false;
+void main_task(void *p);
 
 void parse_config()
 {
@@ -68,23 +70,25 @@ void parse_config()
         wifiMulti.addAP(ssid, pass);
     } */
 
- /*  const char *temp1 = doc["start"];
-  String s = temp1;
-  log_v("found Show start to be %s ", s); */
-  int n = doc["start"];//s.toInt();
+  /*  const char *temp1 = doc["start"];
+   String s = temp1;
+   log_v("found Show start to be %s ", s); */
+  int n = doc["start"]; // s.toInt();
 
   struct tm tm; // check epoch time at https://www.epochconverter.com/
   tm.tm_year = rtc.getYear() - 1900;
   tm.tm_mon = rtc.getMonth();
   tm.tm_mday = rtc.getDay();
-  tm.tm_hour = n / 100;
-  tm.tm_min = n % 100;
+  /*   tm.tm_hour = n / 100;
+    tm.tm_min = n % 100; */
+  tm.tm_hour = rtc.getHour(true);
+  tm.tm_min = rtc.getMinute() + 1;
   tm.tm_sec = 0;
   tm.tm_isdst = -1; // disable summer time
   time_t t = mktime(&tm);
 
   show_start = t;
-  log_v("Set Show start to %d from n=%d", show_start,n);
+  log_v("Set Show start to %d from n=%d", show_start, n);
 
   display_messages.push("READ");
 
@@ -142,7 +146,7 @@ void parse_config()
 void setup()
 {
   makeversion(__DATE__, __TIME__, version);
-
+  pinMode(PIN_BTN_1, OUTPUT);
   Serial.begin(115200);
 
   delay(1000); // prevent upload errors if program crashes esp
@@ -152,7 +156,6 @@ void setup()
 
   init_display();
   delay(2000); // prevent upload errors if program crashes esp
-parse_config();
   Serial.begin(115200);
   logger.begin();
 
@@ -163,7 +166,15 @@ parse_config();
   ui_begin();
   sync_file.begin();
 
-  print_task_stats();
+  xTaskCreatePinnedToCore(
+      main_task,                 /* Function to implement the task */
+      "MAIN Task",               /* Name of the task */
+      SYNC_FILE_TASK_STACK_SIZE, /* Stack size in words */
+      NULL,                      /* Task input parameter */
+      SYNC_FILE_TASK_PRIORITY,   /* Priority of the task */
+      &display_task_handle,      /* Task handle. */
+      SYNC_FILE_TASK_CORE);      /* Core where the task should run */
+                                 // print_task_stats();
 }
 
 //========================================================================================
@@ -172,18 +183,38 @@ parse_config();
 
 void loop()
 {
-  uint32_t now = rtc.getEpoch();
+}
 
-  if (sync_file._isEOF)
+void main_task(void *p)
+{
+  while (1)
   {
-    if (show_start > 0)
+    digitalWrite(PIN_BTN_1, HIGH);
+    gps_task(NULL);
+    digitalWrite(PIN_BTN_1, LOW);
+
+    if (clock_is_set)
     {
-      if (now >= show_start && now < show_end)
+      if (!clock_was_set)
       {
-        sync_file.start();
+        parse_config();
+        clock_was_set = true;
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+      }
+
+      if (!sync_file._isEOF)
+      {
+        sync_file_task(NULL);
+      }
+      else
+      {
+        uint32_t now = rtc.getEpoch();
+
+        if (now > show_start)
+        {
+          sync_file.start();
+        }
       }
     }
-    //   if (millis() > 6000) show_start = now;
   }
-  delay(1);
 }

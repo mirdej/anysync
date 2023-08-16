@@ -24,7 +24,9 @@ uint32_t stats_tick_duration;
 TaskHandle_t gps_task_handle;
 
 uint32_t next_event_ms = 12000;
+unsigned long gpsPulseTimeMillis_registered;
 
+bool clock_is_set = false;
 unsigned long gpsEpochTime = 0;       // in sec UNIX epoch time , second is counted up since 00:00:00 Jan 1 1970
 unsigned long gpsEpochTimeMillis = 0; // in msec millis() when NMEA sentence gives UTC
 unsigned long gpsPulseTimeMillis = 0; // millis() when 1PPS from GPS rises
@@ -35,7 +37,6 @@ unsigned long gpsPulseTimeMicros = 0;
 unsigned long gpsPulseTimeMicrosLast = 0;
 // interrupt service for 1PPS from NEO6M GPS
 // https://www.arduino.cc/reference/en/language/functions/external-interrupts/attachinterrupt/
-
 
 //----------------------------------------------------------------------------------------
 void IRAM_ATTR gps_pulse_interrupt(void)
@@ -87,11 +88,13 @@ void getGPSInfo()
             gpsOffsetMillis = gpsEpochTimeMillis - gpsPulseTimeMillis;
             struct timeval now = {.tv_sec = t};
             settimeofday(&now, NULL); // set rtc
+            clock_is_set = true;
             struct tm *ptm;
             t = time(NULL);
             ptm = localtime(&t);
 
-            clock_seconds = gpsEpochTime + gpsOffsetMillis / 1000;
+            clock_seconds = gpsEpochTime; // + gpsOffsetMillis / 1000;
+            gpsPulseTimeMillis_registered = gpsPulseTimeMillis;
         }
         else
         {
@@ -103,7 +106,62 @@ void getGPSInfo()
 //----------------------------------------------------------------------------------------
 void gps_task(void *p)
 {
-    uint32_t t_millis;
+
+    if (GPS_PulseCount > 0)
+    {
+        //    gpsPulseTimeMicros = micros();
+        //    gpsPulseTimeMillis = millis();
+        // If ISR has been serviced at least once
+        portENTER_CRITICAL(&mux);
+        GPS_PulseCount--;
+        portEXIT_CRITICAL(&mux);
+        gpsPulseTimeMicrosLast = gpsPulseTimeMicros;
+    }
+
+    if (Serial2.available() > 0)
+    {
+        if (gps.encode(Serial2.read()))
+        { // some NMEA sentense is parsed
+            uint32_t t_millis;
+
+            t_millis = millis();
+            if (t_millis < (0xffffffff - 1000))
+            { // avoid millis roll over
+                if ((t_millis - gpsPulseTimeMillis) < 500)
+                { // NMEA parsed is immediately done after PPS
+                    // Serial.print(t_millis); Serial.print(" " ); Serial.print(gpsLasttime); Serial.print(":"); Serial.println( t_millis -gpsLasttime);
+                    if (t_millis - gpsLasttime > 900)
+                    { // but discard other consective NMEA sentenses after first NMEA after PPS
+                        gpsLoop++;
+                        //  digitalWrite(GPIO_NUM_4, gpsLoop % 2);
+                        getGPSInfo();
+                        gpsLasttime = millis();
+                    }
+                    else
+                    {
+                        //  Serial.println("discard this NMEA");
+                    }
+                }
+            }
+        }
+
+        if (gps_satellite_count < gps.satellites.value())
+        {
+            gps_satellite_count = gps.satellites.value();
+            log_v("Found a satellite, now there are %d", gps_satellite_count);
+        }
+        else if (gps_satellite_count > gps.satellites.value())
+        {
+            gps_satellite_count = gps.satellites.value();
+            log_v("Lost a satellite, now there are %d", gps_satellite_count);
+        }
+        //    vTaskDelay(GPS_TASK_DELAY / portTICK_RATE_MS);
+    }
+}
+//----------------------------------------------------------------------------------------
+
+bool clock_init(void)
+{
 
     pinMode(PIN_GPS_1PPS, INPUT);
     attachInterrupt(digitalPinToInterrupt(PIN_GPS_1PPS), gps_pulse_interrupt, RISING);
@@ -112,76 +170,11 @@ void gps_task(void *p)
                   PIN_GPS_TX,
                   PIN_GPS_TX);
 
-    while (1)
-    {
-        if (GPS_PulseCount > 0)
-        {
-            //    gpsPulseTimeMicros = micros();
-            //    gpsPulseTimeMillis = millis();
-            // If ISR has been serviced at least once
-            portENTER_CRITICAL(&mux);
-            GPS_PulseCount--;
-            portEXIT_CRITICAL(&mux);
-            gpsPulseTimeMicrosLast = gpsPulseTimeMicros;
-        }
-
-        if (Serial2.available() > 0)
-        {
-            if (gps.encode(Serial2.read()))
-            { // some NMEA sentense is parsed
-                t_millis = millis();
-                if (t_millis < (0xffffffff - 1000))
-                { // avoid millis roll over
-                    if ((t_millis - gpsPulseTimeMillis) < 500)
-                    { // NMEA parsed is immediately done after PPS
-                        // Serial.print(t_millis); Serial.print(" " ); Serial.print(gpsLasttime); Serial.print(":"); Serial.println( t_millis -gpsLasttime);
-                        if (t_millis - gpsLasttime > 900)
-                        { // but discard other consective NMEA sentenses after first NMEA after PPS
-                            gpsLoop++;
-                            //  digitalWrite(GPIO_NUM_4, gpsLoop % 2);
-                            getGPSInfo();
-                            gpsLasttime = millis();
-                        }
-                        else
-                        {
-                            //  Serial.println("discard this NMEA");
-                        }
-                    }
-                }
-            }
-
-            if (gps_satellite_count < gps.satellites.value())
-            {
-                gps_satellite_count = gps.satellites.value();
-                log_v("Found a satellite, now there are %d", gps_satellite_count);
-            }
-            else if (gps_satellite_count > gps.satellites.value())
-            {
-                gps_satellite_count = gps.satellites.value();
-                log_v("Lost a satellite, now there are %d", gps_satellite_count);
-            }
-            vTaskDelay(GPS_TASK_DELAY / portTICK_RATE_MS);
-        }
-    }
+                  return true;
 }
-//----------------------------------------------------------------------------------------
 
-bool clock_init(void)
+uint32_t get_clock_millis()
 {
-
-    xTaskCreatePinnedToCore(
-        gps_task,          /* Function to implement the task */
-        "GPS Task",        /* Name of the task */
-        GPS_TASK_STACK_SIZE,             /* Stack size in words */
-        NULL,              /* Task input parameter */
-        GPS_TASK_PRIORITY, /* Priority of the task */
-        &gps_task_handle,  /* Task handle. */
-        GPS_TASK_CORE);    /* Core where the task should run */
-
-    return 1;
-}
-
-uint32_t get_clock_millis(){
-  //  return millis();
-    return clock_seconds * 1000 + millis()- gpsLasttime;
+    //  return millis();
+    return clock_seconds * 1000 + millis() - gpsPulseTimeMillis_registered;
 }

@@ -31,57 +31,48 @@ void SyncFile::begin(void)
     log_v("Read: %d", t);
     _last_trigger = t;
     _isEOF = true;
-
-    xTaskCreatePinnedToCore(
-        sync_file_task,            /* Function to implement the task */
-        "SYNCFILE Task",           /* Name of the task */
-        SYNC_FILE_TASK_STACK_SIZE, /* Stack size in words */
-        NULL,                      /* Task input parameter */
-        SYNC_FILE_TASK_PRIORITY,   /* Priority of the task */
-        &sync_file_task_handle,    /* Task handle. */
-        SYNC_FILE_TASK_CORE);      /* Core where the task should run */
 }
 
 //----------------------------------------------------------------------------------------
 
 void SyncFile::start(void)
 {
-    log_v("START");
-    _file.seek(0);
-    _start_time = get_clock_millis();
-    _isEOF = false;
-    getNext();
+        log_v("START");
+        _file.seek(0);
+        _start_time = get_clock_millis();
+        _isEOF = false;
+        getNext();
 }
 
 //----------------------------------------------------------------------------------------
 
 uint32_t SyncFile::getLength()
 {
-    return _last_trigger;
+        return _last_trigger;
 }
 
 //----------------------------------------------------------------------------------------
 
 boolean SyncFile::getNext()
 {
-    if (!_file.available())
-    {
-        _isEOF = true;
-        log_v("Finished Tune");
-        return false;
-    }
+        if (!_file.available())
+        {
+            _isEOF = true;
+            log_v("Finished Tune");
+            return false;
+        }
 
-    uint32_t t = 0;
-    for (int i = 0; i < 4; i++)
-    {
-        t |= (_file.read() << (i * 8));
-    }
+        uint32_t t = 0;
+        for (int i = 0; i < 4; i++)
+        {
+            t |= (_file.read() << (i * 8));
+        }
 
-    _next_trigger = t;
-    _next_event.cmd = _file.read();
-    _next_event.note = _file.read();
-    _next_event.velocity = _file.read();
-    return true;
+        _next_trigger = t;
+        _next_event.cmd = _file.read();
+        _next_event.note = _file.read();
+        _next_event.velocity = _file.read();
+        return true;
 }
 
 //----------------------------------------------------------------------------------------
@@ -89,67 +80,50 @@ boolean SyncFile::getNext()
 uint32_t SyncFile::run(void)
 {
 
-    if (_isEOF)
-        return 100;
+        if (_isEOF)
+            return 0;
 
-    if (_start_time > get_clock_millis())
-    {
-        // this should never happen....
-        log_e("starttime bigger than millis()");
-        return 200;
-    }
-
-    int32_t the_time = get_clock_millis() - _start_time;
-    //  log_v("%d", the_time);
-
-    while (the_time >= _next_trigger)
-    {
-        // spit out MIDI
-        Serial1.write(_next_event.cmd | midi_channel);
-        Serial1.write(_next_event.note);
-        Serial1.write(_next_event.velocity);
-
-    //    log_v("cmd %02x %02x", _next_event.cmd, (_next_event.cmd & 0xF0) == 0x90);
-
-       if ((_next_event.cmd & 0xF0) == 0x90)
-        { // note_on
-            uint8_t n = _next_event.note;
-            char buf[16];
-            sprintf(buf, "samples/%03d.wav", n);
-            audioConnecttoSD(buf);
-        } 
-
-        // log_v("Data: %02x %02x %02x", _next_event.cmd, _next_event.note, _next_event.velocity);
-        if (!getNext())
+        if (_start_time > get_clock_millis())
         {
-            return 1000;
+            // this should never happen....
+            log_e("starttime bigger than millis()");
+            return 200;
         }
-    }
 
-    the_time = get_clock_millis() - _start_time;
-    if (_next_trigger > the_time)
-    {
-        return (_next_trigger - the_time);
-    }
-    else
-    {
-        return 1;
-    }
+        int32_t the_time = get_clock_millis() - _start_time;
+        //  log_v("%d", the_time);
+
+        if (the_time >= _next_trigger)
+        {
+            // spit out MIDI
+            Serial1.write(_next_event.cmd | midi_channel);
+            Serial1.write(_next_event.note);
+            Serial1.write(_next_event.velocity);
+
+log_v("cmd %02x %02x", _next_event.cmd, (_next_event.cmd & 0xF0) == 0x90);
+
+            if ((_next_event.cmd & 0xF0) == 0x90)
+            { // note_on
+                uint8_t n = _next_event.note;
+                char buf[16];
+                sprintf(buf, "samples/%03d.wav", n);
+                audioConnecttoSD(buf);
+            }
+
+            // log_v("Data: %02x %02x %02x", _next_event.cmd, _next_event.note, _next_event.velocity);
+            if (!getNext())
+            {
+                return 0;
+            }
+        }
+        return 0;
 }
 
 //----------------------------------------------------------------------------------------
 //                                        SYNC FILE TASK
 void sync_file_task(void *p)
 {
-    log_v("Started SYFLOOP");
-    while (1)
-    {
-        uint32_t delaytime = sync_file.run();
-        //  log_v("Delay time %d", delaytime);
-        if (delaytime > SYNC_FILE_TASK_DELAY)
-            delaytime = SYNC_FILE_TASK_DELAY;
-        vTaskDelay(delaytime / portTICK_PERIOD_MS);
-    }
+        sync_file.run();
 }
 //----------------------------------------------------------------------------------------
 //                                        Check Sync File

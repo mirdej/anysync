@@ -8,8 +8,9 @@
 extern ESPLogger logger;
 extern ESP32Time rtc;
 
+ void gps_task(void *p);
 
-
+extern bool clock_is_set;
 extern TinyGPSPlus gps;
 extern uint32_t clock_pps_timestamp;
 extern uint32_t clock_seconds;
