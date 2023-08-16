@@ -82,8 +82,8 @@ void parse_config()
   /*   tm.tm_hour = n / 100;
     tm.tm_min = n % 100; */
   tm.tm_hour = rtc.getHour(true);
-  tm.tm_min = rtc.getMinute() + 1;
-  tm.tm_sec = 0;
+  tm.tm_min = rtc.getMinute();
+  tm.tm_sec = 20;
   tm.tm_isdst = -1; // disable summer time
   time_t t = mktime(&tm);
 
@@ -147,6 +147,7 @@ void setup()
 {
   makeversion(__DATE__, __TIME__, version);
   pinMode(PIN_BTN_1, OUTPUT);
+  pinMode(PIN_BTN_2, OUTPUT);
   Serial.begin(115200);
 
   delay(1000); // prevent upload errors if program crashes esp

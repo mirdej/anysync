@@ -6,7 +6,7 @@
 //                                                      UI Task
 extern TaskHandle_t ui_task_handle;
 #define UI_TASK_PRIORITY 3
-#define UI_TASK_CORE 0
+#define UI_TASK_CORE 1
 #define UI_TASK_DELAY 20
 #define UI_TASK_STACK_SIZE 3200
 
