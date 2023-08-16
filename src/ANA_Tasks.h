@@ -13,7 +13,7 @@ extern TaskHandle_t ui_task_handle;
 // +-----------------------------------------------------------------------+
 //                                                      Audio Task
 extern TaskHandle_t audio_task_handle;
-#define AUDIO_TASK_PRIORITY 2
+#define AUDIO_TASK_PRIORITY 4
 #define AUDIO_TASK_CORE LOOP_TASK_CORE
 #define AUDIO_TASK_STACK_SIZE 5000
 
@@ -36,7 +36,7 @@ extern TaskHandle_t display_task_handle;
 // +-----------------------------------------------------------------------+
 //                                                      Sync File Task
 extern TaskHandle_t sync_file_task_handle;
-#define SYNC_FILE_TASK_PRIORITY 1
+#define SYNC_FILE_TASK_PRIORITY 5
 #define SYNC_FILE_TASK_CORE 0
 #define SYNC_FILE_TASK_DELAY   15
 #define SYNC_FILE_TASK_STACK_SIZE 3000

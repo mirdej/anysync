@@ -111,13 +111,13 @@ uint32_t SyncFile::run(void)
 
     //    log_v("cmd %02x %02x", _next_event.cmd, (_next_event.cmd & 0xF0) == 0x90);
 
-        if ((_next_event.cmd & 0xF0) == 0x90)
+       if ((_next_event.cmd & 0xF0) == 0x90)
         { // note_on
             uint8_t n = _next_event.note;
             char buf[16];
             sprintf(buf, "samples/%03d.wav", n);
             audioConnecttoSD(buf);
-        }
+        } 
 
         // log_v("Data: %02x %02x %02x", _next_event.cmd, _next_event.note, _next_event.velocity);
         if (!getNext())

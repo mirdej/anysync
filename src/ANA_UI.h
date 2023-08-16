@@ -7,6 +7,7 @@
 #include "ANA_Syncfile.h"
 
 TaskHandle_t ui_task_handle;
+extern void parse_config();
 
 void ui_task(void *p)
 {
@@ -36,6 +37,7 @@ void ui_task(void *p)
                 log_v("SD Card Inserted");
                 vTaskDelay(500);
                 sd_card_present = SD.begin(PIN_SD_CS);
+                parse_config();
             }
         }
         temp = digitalRead(PIN_BTN);

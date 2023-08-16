@@ -150,21 +150,6 @@ void display_task(void *p)
             }
             else
             {
-                if (show_start == 0)
-                {
-                    struct tm tm; // check epoch time at https://www.epochconverter.com/
-                    tm.tm_year = rtc.getYear() - 1900;
-                    tm.tm_mon = rtc.getMonth();
-                    tm.tm_mday = rtc.getDay();
-                    tm.tm_hour = 15;
-                    tm.tm_min = 0;
-                    tm.tm_sec = 0;
-                    tm.tm_isdst = -1; // disable summer time
-                    time_t t = mktime(&tm);
-
-                    show_start = t;
-                }
-                //         log_v("SHowstart = %d NOW = %d", show_start, time_now);
                 long difftime;
                 time = "";
 
