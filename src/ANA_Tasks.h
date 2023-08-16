@@ -15,7 +15,7 @@ extern TaskHandle_t ui_task_handle;
 extern TaskHandle_t audio_task_handle;
 #define AUDIO_TASK_PRIORITY 4
 #define AUDIO_TASK_CORE 1
-#define AUDIO_TASK_STACK_SIZE 5000
+#define AUDIO_TASK_STACK_SIZE 12000
 
 // +-----------------------------------------------------------------------+
 //                                                      GPS Task
@@ -39,4 +39,4 @@ extern TaskHandle_t sync_file_task_handle;
 #define SYNC_FILE_TASK_PRIORITY 9
 #define SYNC_FILE_TASK_CORE 0
 //#define SYNC_FILE_TASK_DELAY 15
-#define SYNC_FILE_TASK_STACK_SIZE 10000
+#define SYNC_FILE_TASK_STACK_SIZE 14000

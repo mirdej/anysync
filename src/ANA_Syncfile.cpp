@@ -37,42 +37,42 @@ void SyncFile::begin(void)
 
 void SyncFile::start(void)
 {
-        log_v("START");
-        _file.seek(0);
-        _start_time = get_clock_millis();
-        _isEOF = false;
-        getNext();
+    log_v("START");
+    _file.seek(0);
+    _start_time = get_clock_millis();
+    _isEOF = false;
+    getNext();
 }
 
 //----------------------------------------------------------------------------------------
 
 uint32_t SyncFile::getLength()
 {
-        return _last_trigger;
+    return _last_trigger;
 }
 
 //----------------------------------------------------------------------------------------
 
 boolean SyncFile::getNext()
 {
-        if (!_file.available())
-        {
-            _isEOF = true;
-            log_v("Finished Tune");
-            return false;
-        }
+    if (!_file.available())
+    {
+        _isEOF = true;
+        log_v("Finished Tune");
+        return false;
+    }
 
-        uint32_t t = 0;
-        for (int i = 0; i < 4; i++)
-        {
-            t |= (_file.read() << (i * 8));
-        }
+    uint32_t t = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        t |= (_file.read() << (i * 8));
+    }
 
-        _next_trigger = t;
-        _next_event.cmd = _file.read();
-        _next_event.note = _file.read();
-        _next_event.velocity = _file.read();
-        return true;
+    _next_trigger = t;
+    _next_event.cmd = _file.read();
+    _next_event.note = _file.read();
+    _next_event.velocity = _file.read();
+    return true;
 }
 
 //----------------------------------------------------------------------------------------
@@ -80,58 +80,56 @@ boolean SyncFile::getNext()
 uint32_t SyncFile::run(void)
 {
 
-        if (_isEOF)
-            return 0;
+    if (_isEOF)
+        return 0;
 
-        if (_start_time > get_clock_millis())
-        {
-            // this should never happen....
-            log_e("starttime bigger than millis()");
-            return 200;
-        }
+    if (_start_time > get_clock_millis())
+    {
+        // this should never happen....
+        log_e("starttime bigger than millis()");
+        return 200;
+    }
 
-        int32_t the_time = get_clock_millis() - _start_time;
-        //  log_v("%d", the_time);
+    int32_t the_time = get_clock_millis() - _start_time;
+    //  log_v("%d", the_time);
 
-        if (the_time >= _next_trigger)
-        {
-            // spit out MIDI
-            Serial1.write(_next_event.cmd | midi_channel);
-            Serial1.write(_next_event.note);
-            Serial1.write(_next_event.velocity);
+    if (the_time >= _next_trigger)
+    {
+        // spit out MIDI
+        Serial1.write(_next_event.cmd | midi_channel);
+        Serial1.write(_next_event.note);
+        Serial1.write(_next_event.velocity);
 
         log_v("cmd %02x %02x", _next_event.cmd, (_next_event.cmd & 0xF0) == 0x90);
 
-     if ((_next_event.cmd & 0xF0) == 0x80)
-            { // note_off
-                digitalWrite(PIN_BTN_2,LOW);
-            }
-
-            if ((_next_event.cmd & 0xF0) == 0x90)
-            { // note_on
-                digitalWrite(PIN_BTN_2,HIGH);
-                uint8_t n = _next_event.note;
-                char buf[16];
-                sprintf(buf, "samples/%03d.wav", n);
-              //  audioConnecttoSD(buf);
-            }
-
-        
-
-            // log_v("Data: %02x %02x %02x", _next_event.cmd, _next_event.note, _next_event.velocity);
-            if (!getNext())
-            {
-                return 0;
-            }
+        if ((_next_event.cmd & 0xF0) == 0x80)
+        { // note_off
+            digitalWrite(PIN_BTN_2, LOW);
         }
-        return 0;
+
+        if ((_next_event.cmd & 0xF0) == 0x90)
+        { // note_on
+            digitalWrite(PIN_BTN_2, HIGH);
+
+            sample_to_play = _next_event.note;
+
+            digitalWrite(PIN_BTN_1, LOW);
+        }
+
+        // log_v("Data: %02x %02x %02x", _next_event.cmd, _next_event.note, _next_event.velocity);
+        if (!getNext())
+        {
+            return 0;
+        }
+    }
+    return 0;
 }
 
 //----------------------------------------------------------------------------------------
 //                                        SYNC FILE TASK
 void sync_file_task(void *p)
 {
-        sync_file.run();
+    sync_file.run();
 }
 //----------------------------------------------------------------------------------------
 //                                        Check Sync File

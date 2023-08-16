@@ -161,7 +161,6 @@ void setup()
   logger.begin();
 
   audioInit();
-  audioSetVolume(15);
 
   clock_init();
   ui_begin();
@@ -190,9 +189,7 @@ void main_task(void *p)
 {
   while (1)
   {
-    digitalWrite(PIN_BTN_1, HIGH);
     gps_task(NULL);
-    digitalWrite(PIN_BTN_1, LOW);
 
     if (clock_is_set)
     {
