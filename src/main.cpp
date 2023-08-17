@@ -115,12 +115,23 @@ void parse_config()
   display_messages.push("READ");
 }
 
+void debug_task(void *p)
+{
+  while (1)
+  {
+    vTaskDelay(20000 / portTICK_PERIOD_MS);
+    log_v("Heap: %d", ESP.getFreeHeap());
+  }
+}
+
 //========================================================================================
 //----------------------------------------------------------------------------------------
 //                                        SETUP
 
 void setup()
 {
+  WiFi.mode(WIFI_OFF);
+
   makeversion(__DATE__, __TIME__, version);
   pinMode(PIN_BTN_1, OUTPUT);
   pinMode(PIN_BTN_2, OUTPUT);
@@ -139,7 +150,8 @@ void setup()
   parse_config();
   parse_show_file();
 
-  xTaskCreate(check_wifi_task, "check wifi", 12000, NULL, 0, NULL);
+  /*  xTaskCreate(check_wifi_task, "check wifi", 12000, NULL, 0, NULL); */
+  xTaskCreate(debug_task, "check heap", 4000, NULL, 0, NULL);
 
   audioInit();
 
