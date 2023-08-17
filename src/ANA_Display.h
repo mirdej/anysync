@@ -16,8 +16,12 @@ TaskHandle_t display_task_handle;
 String show_name = "Undefined";
 String hostname = "Anysync";
 
+extern uint32_t device_delay;
+
 unsigned long show_start = 0;
 unsigned long show_end = 0;
+int show_start_hour, show_start_minute;
+
 std::queue<String> display_messages;
 
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0,
@@ -123,8 +127,10 @@ void display_task(void *p)
         u8g2.setCursor(0, 64);
         u8g2.print(hostname);
 
-        u8g2.setCursor(ALIGN_RIGHT(show_name.c_str()), 64);
-        u8g2.print(show_name);
+        char buf[8];
+        sprintf(buf, "%dms", device_delay);
+        u8g2.setCursor(ALIGN_RIGHT(buf), 64);
+        u8g2.print(buf);
 
         rtc.offset = 7200;
         String time = rtc.getTime();
@@ -142,7 +148,7 @@ void display_task(void *p)
         }
         else if (!sd_card_present)
         {
-            time = "NO SDCARD";
+            time = "NO CARD";
         }
         else
         {
@@ -151,6 +157,10 @@ void display_task(void *p)
             if (!clock_is_set)
             {
                 time = "NO TIME";
+            }
+            else if (!show_start || time_now > show_end)
+            {
+                time ="DONE";
             }
             else
             {

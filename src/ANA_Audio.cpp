@@ -43,14 +43,17 @@ void audioTask(void *parameter)
 
       char buf[17];
       sprintf(buf, "/samples/%03d.wav", sample_to_play);
-      file = new AudioFileSourceSD(buf);
+
       //  log_v("File loaded");
       if (wav->isRunning())
       {
         wav->stop();
       }
+      delete file;
+      file = new AudioFileSourceSD(buf);
+
       wav->begin(file, out);
-      //      wav->loop();
+      //      wav->loop();*/
       sample_to_play = 0;
       digitalWrite(PIN_BTN_1, HIGH);
     }

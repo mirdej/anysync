@@ -24,7 +24,7 @@ public:
     SyncFile(void);
     void begin(void);
     boolean getNext(void);
-    void start(void);
+    void start(long);
     void rewind();
     uint32_t run(void);
     uint32_t getLength();

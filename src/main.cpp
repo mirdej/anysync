@@ -33,6 +33,7 @@ SyncFile sync_file;
 
 bool clock_was_set = false;
 WiFiMulti wifiMulti;
+uint32_t device_delay = 0;
 
 void main_task(void *p);
 
@@ -40,6 +41,7 @@ void set_show_start(uint32_t t)
 {
   sync_file.rewind();
   show_start = t;
+
   show_end = show_start + sync_file.getLength() / 1000 + 10;
   log_v("Set Show start to %d end to n=%d", show_start, show_end);
 }
@@ -71,6 +73,9 @@ void parse_config()
 
   const char *temp = doc["name"];
   hostname = temp;
+  device_delay = doc["delay"];
+  device_delay %= 100000;
+
   midi_channel = doc["midi_channel"];
   midi_channel--;
   midi_channel %= 16;
@@ -86,12 +91,14 @@ void parse_config()
 
   int n = doc["start"];
 
+show_start_hour =  n / 100;
+show_start_minute = n % 100;
   struct tm tm; // check epoch time at https://www.epochconverter.com/
   tm.tm_year = rtc.getYear() - 1900;
   tm.tm_mon = rtc.getMonth();
   tm.tm_mday = rtc.getDay();
-  tm.tm_hour = n / 100;
-  tm.tm_min = n % 100;
+  tm.tm_hour =show_start_hour;
+  tm.tm_min = show_start_minute;
   tm.tm_sec = 0;
   tm.tm_isdst = -1; // disable summer time
   time_t t = mktime(&tm);
@@ -99,15 +106,16 @@ void parse_config()
   if (t < rtc.getEpoch())
   {
 
-    struct tm tm; // check epoch time at https://www.epochconverter.com/
-    tm.tm_year = rtc.getYear() - 1900;
-    tm.tm_mon = rtc.getMonth();
-    tm.tm_mday = rtc.getDay();
-    tm.tm_hour = rtc.getHour(true);
-    tm.tm_min = rtc.getMinute() + 2;
-    tm.tm_sec = 0;
-    tm.tm_isdst = -1; // disable summer time
-    time_t t = mktime(&tm);
+    /*    struct tm tm; // check epoch time at https://www.epochconverter.com/
+       tm.tm_year = rtc.getYear() - 1900;
+       tm.tm_mon = rtc.getMonth();
+       tm.tm_mday = rtc.getDay();
+       tm.tm_hour = rtc.getHour(true);
+       tm.tm_min = rtc.getMinute() + 2;
+       tm.tm_sec = 0;
+       tm.tm_isdst = -1; // disable summer time
+       time_t t = mktime(&tm); */
+    t = 0;
   }
 
   set_show_start(t);
@@ -119,7 +127,7 @@ void debug_task(void *p)
 {
   while (1)
   {
-    vTaskDelay(20000 / portTICK_PERIOD_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
     log_v("Heap: %d", ESP.getFreeHeap());
   }
 }
@@ -151,7 +159,7 @@ void setup()
   parse_show_file();
 
   /*  xTaskCreate(check_wifi_task, "check wifi", 12000, NULL, 0, NULL); */
-  xTaskCreate(debug_task, "check heap", 4000, NULL, 0, NULL);
+  // xTaskCreate(debug_task, "check heap", 4000, NULL, 0, NULL);
 
   audioInit();
 
@@ -204,7 +212,10 @@ void main_task(void *p)
         {
           if (now > show_start)
           {
-            sync_file.start();
+            if (show_start)
+            {
+              sync_file.start(device_delay);
+            }
           }
         }
       }

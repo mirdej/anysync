@@ -5,11 +5,15 @@
 #include "ANA_Clock.h"
 #include "ANA_Display.h"
 #include "ANA_Syncfile.h"
+#include "ANA_Audio.h"
 
+int pot_value;
 void set_show_start(uint32_t t);
 TaskHandle_t ui_task_handle;
 extern void parse_config();
 long old_show_start;
+extern AudioOutputI2S *out;
+
 void ui_task(void *p)
 {
     log_v("Starting UI Task");
@@ -23,6 +27,16 @@ void ui_task(void *p)
 
     while (1)
     {
+        int val = analogRead(PIN_POT);
+        val = val / 16;
+        val = (7 * pot_value + val) / 8;
+        if (val != pot_value) {
+            pot_value = val;
+            float f = val / 255.;
+            if (f < .1) f = .1;
+           out->SetGain(f);
+        }
+
         temp = digitalRead(PIN_SD_DETECT);
         if (temp != sd_state)
         {

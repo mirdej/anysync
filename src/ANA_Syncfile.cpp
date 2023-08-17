@@ -40,11 +40,12 @@ void SyncFile::rewind(void)
 
 //----------------------------------------------------------------------------------------
 
-void SyncFile::start(void)
+void SyncFile::start(long delay)
 {
     log_v("START");
     _file.seek(0);
     _start_time = get_clock_millis();
+    _start_time += delay;
     _isEOF = false;
     getNext();
 }
@@ -90,8 +91,8 @@ uint32_t SyncFile::run(void)
 
     if (_start_time > get_clock_millis())
     {
-        // this should never happen....
-        log_e("starttime bigger than millis()");
+        // this happens when delayed
+        //log_e("starttime bigger than millis()");
         return 200;
     }
 
