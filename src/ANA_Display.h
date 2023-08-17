@@ -4,6 +4,7 @@
 #include "ANA_Clock.h"
 #include "ANA_Utils.h"
 #include "ANA_Tasks.h"
+#include "WiFi.h"
 #include "Logo.h"
 #include <iostream>
 #include <queue>
@@ -13,6 +14,8 @@ boolean sd_card_present;
 
 TaskHandle_t display_task_handle;
 String show_name = "Undefined";
+String hostname = "Anysync";
+
 unsigned long show_start = 0;
 unsigned long show_end = 0;
 std::queue<String> display_messages;
@@ -101,24 +104,24 @@ void display_task(void *p)
 
         String wifiString = "NO WIFI";
 
-        /*  if (WiFi.status() == WL_CONNECTED)
-         {
-             wifiString = "";
-             int level = calculateSignalLevel(WiFi.RSSI(), 5);
-             for (size_t i = 0; i < level; i++)
-             {
-                 wifiString += "|";
-             }
+        if (WiFi.status() == WL_CONNECTED)
+        {
+            wifiString = "";
+            int level = calculateSignalLevel(WiFi.RSSI(), 5);
+            for (size_t i = 0; i < level; i++)
+            {
+                wifiString += "|";
+            }
 
-             // wifiString = WiFi.SSID();
-         } */
+            // wifiString = WiFi.SSID();
+        }
 
         u8g2.setCursor(ALIGN_RIGHT(wifiString.c_str()), 8);
         u8g2.print(wifiString);
         u8g2.drawHLine(0, 10, 128);
         u8g2.drawHLine(0, 54, 128);
         u8g2.setCursor(0, 64);
-        //   u8g2.print(hostname);
+        u8g2.print(hostname);
 
         u8g2.setCursor(ALIGN_RIGHT(show_name.c_str()), 64);
         u8g2.print(show_name);
@@ -144,8 +147,8 @@ void display_task(void *p)
         else
         {
             long time_now = rtc.getEpoch();
-           // if (time_now < 1579494213UL)
-           if (!clock_is_set)
+            // if (time_now < 1579494213UL)
+            if (!clock_is_set)
             {
                 time = "NO TIME";
             }

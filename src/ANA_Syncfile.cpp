@@ -33,6 +33,11 @@ void SyncFile::begin(void)
     _isEOF = true;
 }
 
+void SyncFile::rewind(void)
+{
+    _isEOF = true;
+}
+
 //----------------------------------------------------------------------------------------
 
 void SyncFile::start(void)
@@ -100,7 +105,7 @@ uint32_t SyncFile::run(void)
         Serial1.write(_next_event.note);
         Serial1.write(_next_event.velocity);
 
-        log_v("cmd %02x %02x", _next_event.cmd, (_next_event.cmd & 0xF0) == 0x90);
+        // log_v("cmd %02x %02x", _next_event.cmd, (_next_event.cmd & 0xF0) == 0x90);
 
         if ((_next_event.cmd & 0xF0) == 0x80)
         { // note_off

@@ -11,6 +11,7 @@
 #include <ESP32Time.h>
 
 #include "WiFi.h"
+#include <WiFiMulti.h>
 #include "ANA_Pins.h"
 #include "ANA_Audio.h"
 #include "ANA_Clock.h"
@@ -19,6 +20,7 @@
 #include "ANA_Print.h"
 #include "ANA_MIDIFile.h"
 #include "ANA_Syncfile.h"
+#include "ANA_Wifi.h"
 #include "SPI.h"
 #include "SD.h"
 #include "FS.h"
@@ -28,12 +30,24 @@
 
 ESPLogger logger("/log.txt", SD);
 SyncFile sync_file;
-String hostname;
+
 bool clock_was_set = false;
+WiFiMulti wifiMulti;
+
 void main_task(void *p);
+
+void set_show_start(uint32_t t)
+{
+  sync_file.rewind();
+  show_start = t;
+  show_end = show_start + sync_file.getLength() / 1000 + 10;
+  log_v("Set Show start to %d end to n=%d", show_start, show_end);
+}
 
 void parse_config()
 {
+  sync_file.begin(); // need to be open before setting show_end
+
   File f = SD.open("/config.json", FILE_READ);
   if (!f)
   {
@@ -61,82 +75,44 @@ void parse_config()
   midi_channel--;
   midi_channel %= 16;
   log_v("Set MIDI channel to %d", midi_channel);
-  /*   JsonArray array = doc["passwords"].as<JsonArray>();
-    for (JsonVariant v : array)
-    {
-        const char *ssid = v["ssid"];
-        const char *pass = v["pass"];
-        log_v("---->WIFI: %s, %s", ssid, pass);
-        wifiMulti.addAP(ssid, pass);
-    } */
+  JsonArray array = doc["passwords"].as<JsonArray>();
+  for (JsonVariant v : array)
+  {
+    const char *ssid = v["ssid"];
+    const char *pass = v["pass"];
+    log_v("---->WIFI: %s, %s", ssid, pass);
+    wifiMulti.addAP(ssid, pass);
+  }
 
-  /*  const char *temp1 = doc["start"];
-   String s = temp1;
-   log_v("found Show start to be %s ", s); */
-  int n = doc["start"]; // s.toInt();
+  int n = doc["start"];
 
   struct tm tm; // check epoch time at https://www.epochconverter.com/
   tm.tm_year = rtc.getYear() - 1900;
   tm.tm_mon = rtc.getMonth();
   tm.tm_mday = rtc.getDay();
-  /*   tm.tm_hour = n / 100;
-    tm.tm_min = n % 100; */
-  tm.tm_hour = rtc.getHour(true);
-  tm.tm_min = rtc.getMinute();
-  tm.tm_sec = 20;
+  tm.tm_hour = n / 100;
+  tm.tm_min = n % 100;
+  tm.tm_sec = 0;
   tm.tm_isdst = -1; // disable summer time
   time_t t = mktime(&tm);
 
-  show_start = t;
-  log_v("Set Show start to %d from n=%d", show_start, n);
+  if (t < rtc.getEpoch())
+  {
+
+    struct tm tm; // check epoch time at https://www.epochconverter.com/
+    tm.tm_year = rtc.getYear() - 1900;
+    tm.tm_mon = rtc.getMonth();
+    tm.tm_mday = rtc.getDay();
+    tm.tm_hour = rtc.getHour(true);
+    tm.tm_min = rtc.getMinute() + 2;
+    tm.tm_sec = 0;
+    tm.tm_isdst = -1; // disable summer time
+    time_t t = mktime(&tm);
+  }
+
+  set_show_start(t);
 
   display_messages.push("READ");
-
-  /*  S
-    log_v("------PARSE SHOW-------");
-
-   f.open("/show.json", O_READ);
-   if (!f)
-   {
-     display_messages.push("FAIL CONFIG FILE");
-
-     log_e("Failed to open config file");
-     return;
-   }
-   DynamicJsonDocument doc(2048);
-   log_i("READ");
-   DeserializationError error = deserializeJson(doc, f);
-   if (error)
-   {
-     log_e("Failed to read file");
-     f.close();
-
-     return;
-   }
-   f.close();
-   log_v("Deserialized");
-   const char *temp = doc["name"];
-   show_name = temp;
-
-   gmt_offset = doc["gmt_offset"];
-   show_start = doc["start"];
-   show_start += gmt_offset;
-   show_end = show_start + SYF.getLength() / 1000 + 1;
-   // rtc.offset = gmt_offset;
-
-   log_v("GMT-offset %d", gmt_offset);
-   JsonArray array = doc["devices"].as<JsonArray>();
-   for (JsonVariant v : array)
-   {
-     const char *macadd = v["mac"];
-     log_v("---->MAC: %s, %s", macadd, WiFi.macAddress().c_str());
-     if (!strcmp(macadd, WiFi.macAddress().c_str()))
-     {
-       const char *temp2 = v["name"];
-       hostname = temp2;
-     }
-   }
-   display_messages.push("READ"); */
 }
 
 //========================================================================================
@@ -157,14 +133,18 @@ void setup()
 
   init_display();
   delay(2000); // prevent upload errors if program crashes esp
-  Serial.begin(115200);
-  logger.begin();
+
+  // logger.begin();
+
+  parse_config();
+  parse_show_file();
+
+  xTaskCreate(check_wifi_task, "check wifi", 12000, NULL, 0, NULL);
 
   audioInit();
 
   clock_init();
   ui_begin();
-  sync_file.begin();
 
   xTaskCreatePinnedToCore(
       main_task,                 /* Function to implement the task */
@@ -196,6 +176,7 @@ void main_task(void *p)
       if (!clock_was_set)
       {
         parse_config();
+        parse_show_file();
         clock_was_set = true;
         vTaskDelay(10 / portTICK_PERIOD_MS);
       }
@@ -207,10 +188,12 @@ void main_task(void *p)
       else
       {
         uint32_t now = rtc.getEpoch();
-
-        if (now > show_start)
+        if (now < show_end)
         {
-          sync_file.start();
+          if (now > show_start)
+          {
+            sync_file.start();
+          }
         }
       }
     }

@@ -6,9 +6,10 @@
 #include "ANA_Display.h"
 #include "ANA_Syncfile.h"
 
+void set_show_start(uint32_t t);
 TaskHandle_t ui_task_handle;
 extern void parse_config();
-
+long old_show_start;
 void ui_task(void *p)
 {
     log_v("Starting UI Task");
@@ -31,6 +32,7 @@ void ui_task(void *p)
                 log_v("SD Card Removed");
                 sd_card_present = 0;
                 SD.end();
+                sync_file.rewind();
             }
             else
             {
@@ -55,11 +57,13 @@ void ui_task(void *p)
                 if (sync_file._isEOF)
                 {
                     //    vPortEnterCritical(&my_spinlock);
-                    show_start = rtc.getEpoch();
+                    old_show_start = show_start;
+                    set_show_start(rtc.getEpoch());
                     show_end = show_start + sync_file.getLength() / 1000 + 10;
                 } else {
-                    show_start = 0;
+                    show_start = old_show_start;
                     sync_file._isEOF = true;
+
                 }
                 //          vPortExitCritical(&my_spinlock);
             }

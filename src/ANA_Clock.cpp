@@ -148,12 +148,12 @@ void gps_task(void *p)
         if (gps_satellite_count < gps.satellites.value())
         {
             gps_satellite_count = gps.satellites.value();
-            log_v("Found a satellite, now there are %d", gps_satellite_count);
+         //   log_v("Found a satellite, now there are %d", gps_satellite_count);
         }
         else if (gps_satellite_count > gps.satellites.value())
         {
             gps_satellite_count = gps.satellites.value();
-            log_v("Lost a satellite, now there are %d", gps_satellite_count);
+      //      log_v("Lost a satellite, now there are %d", gps_satellite_count);
         }
         //    vTaskDelay(GPS_TASK_DELAY / portTICK_RATE_MS);
     }
@@ -170,7 +170,7 @@ bool clock_init(void)
                   PIN_GPS_TX,
                   PIN_GPS_TX);
 
-                  return true;
+    return true;
 }
 
 uint32_t get_clock_millis()

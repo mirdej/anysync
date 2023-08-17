@@ -25,6 +25,7 @@ public:
     void begin(void);
     boolean getNext(void);
     void start(void);
+    void rewind();
     uint32_t run(void);
     uint32_t getLength();
 

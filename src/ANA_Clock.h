@@ -2,6 +2,7 @@
 #include <ESPLogger.h>
 #include <TinyGPSPlus.h>
 #include <ESP32Time.h>
+#include "ANA_Syncfile.h"
 
 #pragma once
 
@@ -26,3 +27,6 @@ extern hw_timer_t *ms_timer ;
 
 bool clock_init();
 uint32_t get_clock_millis();
+
+void set_show_start(uint32_t t);
+
