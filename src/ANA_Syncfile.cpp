@@ -110,16 +110,15 @@ uint32_t SyncFile::run(void)
 
         if ((_next_event.cmd & 0xF0) == 0x80)
         { // note_off
-            digitalWrite(PIN_BTN_2, LOW);
         }
 
         if ((_next_event.cmd & 0xF0) == 0x90)
         { // note_on
             digitalWrite(PIN_BTN_2, HIGH);
+            digitalWrite(PIN_BTN_1, HIGH);
 
             sample_to_play = _next_event.note;
 
-            digitalWrite(PIN_BTN_1, LOW);
         }
 
         // log_v("Data: %02x %02x %02x", _next_event.cmd, _next_event.note, _next_event.velocity);

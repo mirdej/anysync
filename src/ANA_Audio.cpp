@@ -55,7 +55,8 @@ void audioTask(void *parameter)
       wav->begin(file, out);
       //      wav->loop();*/
       sample_to_play = 0;
-      digitalWrite(PIN_BTN_1, HIGH);
+      digitalWrite(PIN_BTN_1, LOW);
+      digitalWrite(PIN_BTN_2, LOW);
     }
 
     if (wav->isRunning())
