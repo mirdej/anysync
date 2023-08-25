@@ -91,13 +91,13 @@ void parse_config()
 
   int n = doc["start"];
 
-show_start_hour =  n / 100;
-show_start_minute = n % 100;
+  show_start_hour = n / 100;
+  show_start_minute = n % 100;
   struct tm tm; // check epoch time at https://www.epochconverter.com/
   tm.tm_year = rtc.getYear() - 1900;
   tm.tm_mon = rtc.getMonth();
   tm.tm_mday = rtc.getDay();
-  tm.tm_hour =show_start_hour;
+  tm.tm_hour = show_start_hour;
   tm.tm_min = show_start_minute;
   tm.tm_sec = 0;
   tm.tm_isdst = -1; // disable summer time
@@ -172,7 +172,7 @@ void setup()
       SYNC_FILE_TASK_STACK_SIZE, /* Stack size in words */
       NULL,                      /* Task input parameter */
       SYNC_FILE_TASK_PRIORITY,   /* Priority of the task */
-      &display_task_handle,      /* Task handle. */
+      &sync_file_task_handle,     /* Task handle. */
       SYNC_FILE_TASK_CORE);      /* Core where the task should run */
                                  // print_task_stats();
 }

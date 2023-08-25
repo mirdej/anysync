@@ -34,15 +34,17 @@ void audioTask(void *parameter)
     if (sample_to_play > 0)
     {
 
-      long t = millis() - last_play_millis;
-      if (t < MIN_AUDIO_DELAY)
-      {
-        vTaskDelay(MIN_AUDIO_DELAY - t / portTICK_PERIOD_MS);
-      }
-      last_play_millis = millis();
+      //                                                          ????????? still needed?
+      /*    long t = millis() - last_play_millis;
+         if (t < MIN_AUDIO_DELAY)
+         {
+           vTaskDelay(MIN_AUDIO_DELAY - t / portTICK_PERIOD_MS);
+         }
+         last_play_millis = millis(); */
 
       char buf[17];
       sprintf(buf, "/samples/%03d.wav", sample_to_play);
+           digitalWrite(PIN_BTN_2, LOW);
 
       //  log_v("File loaded");
       if (wav->isRunning())
@@ -51,12 +53,11 @@ void audioTask(void *parameter)
       }
       delete file;
       file = new AudioFileSourceSD(buf);
+       digitalWrite(PIN_BTN_1, LOW);
 
       wav->begin(file, out);
       //      wav->loop();*/
       sample_to_play = 0;
-      digitalWrite(PIN_BTN_1, LOW);
-      digitalWrite(PIN_BTN_2, LOW);
     }
 
     if (wav->isRunning())
@@ -65,8 +66,13 @@ void audioTask(void *parameter)
       {
         wav->stop();
       }
+       vTaskDelay(1 / portTICK_PERIOD_MS);  // give some time for other tasks while playing audio
     }
-    vTaskDelay(1 / portTICK_PERIOD_MS);
+    else
+    {
+      vTaskSuspend(NULL);
+    }
+    // vTaskDelay(1 / portTICK_PERIOD_MS);
   }
 }
 

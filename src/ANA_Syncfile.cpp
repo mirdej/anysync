@@ -45,7 +45,11 @@ void SyncFile::start(long delay)
     log_v("START");
     _file.seek(0);
     _start_time = get_clock_millis();
+    // round to exact beginning of the second
+    _start_time = _start_time / 1000;
+    _start_time = _start_time * 1000;
     _start_time += delay;
+
     _isEOF = false;
     getNext();
 }
@@ -92,7 +96,7 @@ uint32_t SyncFile::run(void)
     if (_start_time > get_clock_millis())
     {
         // this happens when delayed
-        //log_e("starttime bigger than millis()");
+        // log_e("starttime bigger than millis()");
         return 200;
     }
 
@@ -118,7 +122,7 @@ uint32_t SyncFile::run(void)
             digitalWrite(PIN_BTN_1, HIGH);
 
             sample_to_play = _next_event.note;
-
+            vTaskResume(audio_task_handle);
         }
 
         // log_v("Data: %02x %02x %02x", _next_event.cmd, _next_event.note, _next_event.velocity);
