@@ -1,4 +1,5 @@
 #pragma once
+
 #include "ANA_Pins.h"
 #include <Arduino.h>
 #include "ANA_Tasks.h"
@@ -87,7 +88,8 @@ void ui_task(void *p)
                     }
                     else
                     {
-                        show_start = old_show_start;
+                        set_show_start(old_show_start);
+                        old_show_start = 0;
                         log_v("STOP from Button");
                         sync_file.rewind();
                     }

@@ -1,6 +1,8 @@
 #include "ANA_Syncfile.h"
 #include "ANA_Tasks.h"
 
+extern long old_show_start;
+extern long show_start;
 uint8_t midi_channel = 0;
 TaskHandle_t sync_file_task_handle;
 
@@ -79,12 +81,17 @@ uint32_t SyncFile::getLength()
 
 boolean SyncFile::getNext()
 {
-        if(!_file) return;
+        if(!_file) return false ;
 
     if (!_file.available())
     {
         _isEOF = true;
         log_v("Finished Tune");
+        if (old_show_start){
+            log_v("Set back to original show start");
+            set_show_start(old_show_start);
+            old_show_start = 0;
+        }
         return false;
     }
 

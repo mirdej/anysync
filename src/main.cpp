@@ -189,13 +189,11 @@ void loop()
   static long last;
   if (millis() - last > 4000)
   {
-    log_v("%04d %02d:%02d;%02d", gps.date.year(), gps.time.hour(), gps.time.minute(), gps.time.second());
+//    log_v("%04d %02d:%02d;%02d", gps.date.year(), gps.time.hour(), gps.time.minute(), gps.time.second());
     last = millis();
-
-    int Year = gps.date.year();
     if (clock_status == unset)
     {
-      if (Year > 2017)
+      if (gps.date.year() > 2017)
       {
         // apparently GPS RTC is running, set clock temporarily with >1s precision
         clock_status = gps_rtc;
@@ -204,6 +202,7 @@ void loop()
     }
   }
 }
+
 
 void main_task(void *p)
 {
