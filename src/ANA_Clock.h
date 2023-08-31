@@ -1,17 +1,20 @@
+#pragma once
+
 #include "Arduino.h"
 #include <ESPLogger.h>
 #include <TinyGPSPlus.h>
 #include <ESP32Time.h>
 #include "ANA_Syncfile.h"
 
-#pragma once
+
+enum ClockStatus{unset,gps_rtc,gps_fix};
 
 extern ESPLogger logger;
 extern ESP32Time rtc;
 
  void gps_task(void *p);
 
-extern bool clock_is_set;
+extern ClockStatus clock_status;
 extern TinyGPSPlus gps;
 extern uint32_t clock_pps_timestamp;
 extern uint32_t clock_seconds;
@@ -29,4 +32,5 @@ bool clock_init();
 uint32_t get_clock_millis();
 
 void set_show_start(uint32_t t);
+void set_clock_from_gps();
 

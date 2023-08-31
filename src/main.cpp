@@ -7,6 +7,8 @@
 
 ----------------------------------------------------------------------------------------*/
 
+
+
 #include "Arduino.h"
 #include <ESP32Time.h>
 
@@ -31,9 +33,10 @@
 ESPLogger logger("/log.txt", SD);
 SyncFile sync_file;
 
-bool clock_was_set = false;
 WiFiMulti wifiMulti;
 uint32_t device_delay = 0;
+ClockStatus clock_status = unset;
+ClockStatus last_clock_status = unset;
 
 void main_task(void *p);
 
@@ -172,7 +175,7 @@ void setup()
       SYNC_FILE_TASK_STACK_SIZE, /* Stack size in words */
       NULL,                      /* Task input parameter */
       SYNC_FILE_TASK_PRIORITY,   /* Priority of the task */
-      &sync_file_task_handle,     /* Task handle. */
+      &sync_file_task_handle,    /* Task handle. */
       SYNC_FILE_TASK_CORE);      /* Core where the task should run */
                                  // print_task_stats();
 }
@@ -183,6 +186,23 @@ void setup()
 
 void loop()
 {
+  static long last;
+  if (millis() - last > 4000)
+  {
+    log_v("%04d %02d:%02d;%02d", gps.date.year(), gps.time.hour(), gps.time.minute(), gps.time.second());
+    last = millis();
+
+    int Year = gps.date.year();
+    if (clock_status == unset)
+    {
+      if (Year > 2017)
+      {
+        // apparently GPS RTC is running, set clock temporarily with >1s precision
+        clock_status = gps_rtc;
+        set_clock_from_gps();
+      }
+    }
+  }
 }
 
 void main_task(void *p)
@@ -191,13 +211,13 @@ void main_task(void *p)
   {
     gps_task(NULL);
 
-    if (clock_is_set)
+    if (clock_status != unset)
     {
-      if (!clock_was_set)
+      if (last_clock_status == unset)
       {
         parse_config();
         parse_show_file();
-        clock_was_set = true;
+        last_clock_status = clock_status;
         vTaskDelay(10 / portTICK_PERIOD_MS);
       }
 

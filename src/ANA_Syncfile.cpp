@@ -33,6 +33,19 @@ void SyncFile::begin(void)
     _isEOF = true;
 }
 
+
+//----------------------------------------------------------------------------------------
+
+void SyncFile::end(void)
+{
+        _isEOF = true;
+        if (_file) {
+            _file.close();
+        }
+}
+
+//----------------------------------------------------------------------------------------
+
 void SyncFile::rewind(void)
 {
     _isEOF = true;
@@ -90,18 +103,18 @@ boolean SyncFile::getNext()
 uint32_t SyncFile::run(void)
 {
 
-    if (_isEOF)
-        return 0;
+   /*  if (_isEOF)
+        return 0; */
 
     if (_start_time > get_clock_millis())
     {
         // this happens when delayed
-        // log_e("starttime bigger than millis()");
+        log_v("starttime bigger than millis(): %d",get_clock_millis());
         return 200;
     }
 
     int32_t the_time = get_clock_millis() - _start_time;
-    //  log_v("%d", the_time);
+//log_v("%d", the_time);
 
     if (the_time >= _next_trigger)
     {

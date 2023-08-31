@@ -136,6 +136,12 @@ void display_task(void *p)
         u8g2.setCursor(ALIGN_CENTER(time.c_str()), 9);
         u8g2.print(time);
 
+if (clock_status == gps_rtc) {
+         time = "FREE RUNNING";
+        u8g2.setCursor(ALIGN_CENTER(time.c_str()), 20);
+        u8g2.print(time);
+
+}
         /*   u8g2.setCursor(0, 20);
           u8g2.print(show_start); */
         u8g2.setFont(u8g2_font_logisoso22_tr);
@@ -153,7 +159,7 @@ void display_task(void *p)
         {
             long time_now = rtc.getEpoch();
             // if (time_now < 1579494213UL)
-            if (!clock_is_set)
+            if (clock_status == unset)
             {
                 time = "NO TIME";
             }

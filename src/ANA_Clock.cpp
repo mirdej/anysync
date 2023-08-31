@@ -26,7 +26,7 @@ TaskHandle_t gps_task_handle;
 uint32_t next_event_ms = 12000;
 unsigned long gpsPulseTimeMillis_registered;
 
-bool clock_is_set = false;
+
 unsigned long gpsEpochTime = 0;       // in sec UNIX epoch time , second is counted up since 00:00:00 Jan 1 1970
 unsigned long gpsEpochTimeMillis = 0; // in msec millis() when NMEA sentence gives UTC
 unsigned long gpsPulseTimeMillis = 0; // millis() when 1PPS from GPS rises
@@ -58,6 +58,38 @@ String int2digit3(uint32_t msec)
     return ("00" + String(msec));
 }
 
+void set_clock_from_gps()
+{
+    int Year = gps.date.year();
+
+    byte Month = gps.date.month();
+    byte Day = gps.date.day();
+    byte Hour = gps.time.hour();
+    byte Minute = gps.time.minute();
+    byte Second = gps.time.second();
+
+    struct tm tm; // check epoch time at https://www.epochconverter.com/
+    tm.tm_year = Year - 1900;
+    tm.tm_mon = Month - 1;
+    tm.tm_mday = Day;
+    tm.tm_hour = Hour;
+    tm.tm_min = Minute;
+    tm.tm_sec = Second;
+    tm.tm_isdst = -1; // disable summer time
+    time_t t = mktime(&tm);
+    gpsEpochTime = t;              // in  sec
+    gpsEpochTimeMillis = millis(); // in msec
+    gpsOffsetMillis = gpsEpochTimeMillis - gpsPulseTimeMillis;
+    struct timeval now = {.tv_sec = t};
+    settimeofday(&now, NULL); // set rtc
+    struct tm *ptm;
+    t = time(NULL);
+    ptm = localtime(&t);
+
+    clock_seconds = gpsEpochTime; // + gpsOffsetMillis / 1000;
+    gpsPulseTimeMillis_registered = gpsPulseTimeMillis;
+}
+
 // UTC by TinyGPS++ points to the rising edge of PPS according to NEO6M reference manual
 int i = 0;
 void getGPSInfo()
@@ -67,34 +99,8 @@ void getGPSInfo()
     {
         if (gps.location.isValid() && gps.time.isValid() && (Year > 2017))
         {
-
-            byte Month = gps.date.month();
-            byte Day = gps.date.day();
-            byte Hour = gps.time.hour();
-            byte Minute = gps.time.minute();
-            byte Second = gps.time.second();
-
-            struct tm tm; // check epoch time at https://www.epochconverter.com/
-            tm.tm_year = Year - 1900;
-            tm.tm_mon = Month - 1;
-            tm.tm_mday = Day;
-            tm.tm_hour = Hour;
-            tm.tm_min = Minute;
-            tm.tm_sec = Second;
-            tm.tm_isdst = -1; // disable summer time
-            time_t t = mktime(&tm);
-            gpsEpochTime = t;              // in  sec
-            gpsEpochTimeMillis = millis(); // in msec
-            gpsOffsetMillis = gpsEpochTimeMillis - gpsPulseTimeMillis;
-            struct timeval now = {.tv_sec = t};
-            settimeofday(&now, NULL); // set rtc
-            clock_is_set = true;
-            struct tm *ptm;
-            t = time(NULL);
-            ptm = localtime(&t);
-
-            clock_seconds = gpsEpochTime; // + gpsOffsetMillis / 1000;
-            gpsPulseTimeMillis_registered = gpsPulseTimeMillis;
+            clock_status = gps_fix;
+            set_clock_from_gps();
         }
         else
         {
@@ -148,12 +154,12 @@ void gps_task(void *p)
         if (gps_satellite_count < gps.satellites.value())
         {
             gps_satellite_count = gps.satellites.value();
-         //   log_v("Found a satellite, now there are %d", gps_satellite_count);
+            //   log_v("Found a satellite, now there are %d", gps_satellite_count);
         }
         else if (gps_satellite_count > gps.satellites.value())
         {
             gps_satellite_count = gps.satellites.value();
-      //      log_v("Lost a satellite, now there are %d", gps_satellite_count);
+            //      log_v("Lost a satellite, now there are %d", gps_satellite_count);
         }
         //    vTaskDelay(GPS_TASK_DELAY / portTICK_RATE_MS);
     }

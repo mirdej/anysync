@@ -23,6 +23,8 @@ class SyncFile
 public:
     SyncFile(void);
     void begin(void);
+    void end(void);
+
     boolean getNext(void);
     void start(long);
     void rewind();
