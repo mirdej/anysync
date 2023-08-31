@@ -7,6 +7,10 @@ extern WiFiMulti wifiMulti;
 
 void parse_show_file()
 {
+            rtc.offset = 7200;
+
+return;
+
 
     log_v("------PARSE SHOW-------");
     File f = SD.open("/show.json", FILE_READ);
