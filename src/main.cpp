@@ -37,6 +37,7 @@ WiFiMulti wifiMulti;
 uint32_t device_delay = 0;
 ClockStatus clock_status = unset;
 ClockStatus last_clock_status = unset;
+TaskHandle_t wifi_task_handle;
 
 void main_task(void *p);
 
@@ -73,11 +74,11 @@ void parse_config()
     return;
   }
   f.close();
-
+/* 
   const char *temp = doc["name"];
   hostname = temp;
   device_delay = doc["delay"];
-  device_delay %= 100000;
+  device_delay %= 100000; */
 
   midi_channel = doc["midi_channel"];
   midi_channel--;
@@ -92,7 +93,7 @@ void parse_config()
     wifiMulti.addAP(ssid, pass);
   }
 
-  int n = doc["start"];
+  /* int n = doc["start"];
 
   show_start_hour = n / 100;
   show_start_minute = n % 100;
@@ -118,10 +119,10 @@ void parse_config()
        tm.tm_sec = 0;
        tm.tm_isdst = -1; // disable summer time
        time_t t = mktime(&tm); */
-    t = 0;
+ /*   t = 0;
   }
 
-  set_show_start(t);
+  set_show_start(t); */
 
   display_messages.push("READ");
 }
@@ -161,7 +162,7 @@ void setup()
   parse_config();
   parse_show_file();
 
-  /*  xTaskCreate(check_wifi_task, "check wifi", 12000, NULL, 0, NULL); */
+  xTaskCreate(check_wifi_task, "check wifi", WIFI_TASK_STACK_SIZE, NULL, WIFI_TASK_PRIORITY, &wifi_task_handle);
   // xTaskCreate(debug_task, "check heap", 4000, NULL, 0, NULL);
 
   audioInit();

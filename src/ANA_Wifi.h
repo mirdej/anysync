@@ -7,17 +7,17 @@ extern WiFiMulti wifiMulti;
 
 void parse_show_file()
 {
-            rtc.offset = 7200;
-
-return;
-
+    // Set defaults
+    rtc.offset = 7200;
+    hostname = "unknown";
+    show_name = "unknown";
+    device_delay = 0;
 
     log_v("------PARSE SHOW-------");
     File f = SD.open("/show.json", FILE_READ);
     if (!f)
     {
         display_messages.push("FAIL SHOW FILE");
-        rtc.offset = 7200;
 
         log_e("Failed to open config file");
         return;
@@ -42,6 +42,17 @@ return;
     log_v("GMT-offset %d", gmt_offset);
     rtc.offset = gmt_offset;
 
+    long t = doc["start"];
+    t += gmt_offset;
+    log_v("Start: %d, Epoch: %d", t, rtc.getEpoch());
+
+    if (t < rtc.getEpoch())
+    {
+        t = 0;
+    }
+
+    set_show_start(t);
+
     JsonArray array = doc["devices"].as<JsonArray>();
     for (JsonVariant v : array)
     {
@@ -51,6 +62,8 @@ return;
         {
             const char *temp2 = v["name"];
             hostname = temp2;
+
+            device_delay = v["delay"];
         }
     }
     display_messages.push("READ");
@@ -59,12 +72,11 @@ return;
 
 void download_show_file()
 {
-    String url = "http://synkie.net/anysync/show.json";
+    String url = "http://synkie.net/anysync/hello.php?mac=" + WiFi.macAddress();
+
     HTTPClient http;
     log_i("Downloading config file");
     display_messages.push("DOWNLOAD");
-
-    // file_name = test2.htm
     Serial.println(url);
     http.begin(url);
     int httpCode = http.GET();
@@ -73,7 +85,6 @@ void download_show_file()
         if (httpCode == HTTP_CODE_OK)
         {
             File f;
-            // ifstream    sdout(stream;
             SD.remove("/show.json");
             f = SD.open("/show.json", FILE_WRITE);
 
@@ -100,6 +111,7 @@ void download_show_file()
 
 void check_wifi_task(void *)
 {
+
     WiFi.mode(WIFI_STA);
 
     while (1)
@@ -109,11 +121,10 @@ void check_wifi_task(void *)
             wifiMulti.run();
             if (WiFi.status() == WL_CONNECTED)
             {
-
                 log_i("IP address: %s", WiFi.localIP().toString());
-                //       download_show_file();
+                download_show_file();
             }
         }
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
