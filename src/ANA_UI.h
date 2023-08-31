@@ -81,17 +81,16 @@ void ui_task(void *p)
                 {
                     if (sync_file._isEOF)
                     {
-                        //    vPortEnterCritical(&my_spinlock);
                         old_show_start = show_start;
                         set_show_start(rtc.getEpoch());
-                        show_end = show_start + sync_file.getLength() / 1000 + 10;
+                        log_v("START from Button");
                     }
                     else
                     {
                         show_start = old_show_start;
+                        log_v("STOP from Button");
                         sync_file.rewind();
                     }
-                    //          vPortExitCritical(&my_spinlock);}
                 }
             }
         }

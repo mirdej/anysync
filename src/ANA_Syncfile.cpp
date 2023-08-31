@@ -55,6 +55,7 @@ void SyncFile::rewind(void)
 
 void SyncFile::start(long delay)
 {
+    if(!_file) return;
     log_v("START");
     _file.seek(0);
     _start_time = get_clock_millis();
@@ -78,6 +79,8 @@ uint32_t SyncFile::getLength()
 
 boolean SyncFile::getNext()
 {
+        if(!_file) return;
+
     if (!_file.available())
     {
         _isEOF = true;
