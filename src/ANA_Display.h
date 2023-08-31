@@ -132,7 +132,6 @@ void display_task(void *p)
         u8g2.setCursor(ALIGN_RIGHT(buf), 64);
         u8g2.print(buf);
 
-        rtc.offset = 7200;
         String time = rtc.getTime();
         u8g2.setCursor(ALIGN_CENTER(time.c_str()), 9);
         u8g2.print(time);
