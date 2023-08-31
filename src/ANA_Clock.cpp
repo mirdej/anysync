@@ -26,7 +26,6 @@ TaskHandle_t gps_task_handle;
 uint32_t next_event_ms = 12000;
 unsigned long gpsPulseTimeMillis_registered;
 
-
 unsigned long gpsEpochTime = 0;       // in sec UNIX epoch time , second is counted up since 00:00:00 Jan 1 1970
 unsigned long gpsEpochTimeMillis = 0; // in msec millis() when NMEA sentence gives UTC
 unsigned long gpsPulseTimeMillis = 0; // millis() when 1PPS from GPS rises
@@ -77,17 +76,23 @@ void set_clock_from_gps()
     tm.tm_sec = Second;
     tm.tm_isdst = -1; // disable summer time
     time_t t = mktime(&tm);
-    gpsEpochTime = t;              // in  sec
-    gpsEpochTimeMillis = millis(); // in msec
-    gpsOffsetMillis = gpsEpochTimeMillis - gpsPulseTimeMillis;
+    gpsEpochTime = t; // in  sec
+    // gpsEpochTimeMillis = millis(); // in msec
+    //  gpsOffsetMillis = gpsEpochTimeMillis - gpsPulseTimeMillis;
     struct timeval now = {.tv_sec = t};
     settimeofday(&now, NULL); // set rtc
-    struct tm *ptm;
-    t = time(NULL);
-    ptm = localtime(&t);
+
+    /*     struct tm *ptm;
+        t = time(NULL);
+        ptm = localtime(&t); */
 
     clock_seconds = gpsEpochTime; // + gpsOffsetMillis / 1000;
-    gpsPulseTimeMillis_registered = gpsPulseTimeMillis;
+    if (clock_status == gps_fix)
+    {
+        gpsPulseTimeMillis_registered = gpsPulseTimeMillis;
+    } else {
+        gpsPulseTimeMillis_registered = millis() - (10 * gps.time.centisecond() + gps.time.age());
+    }
 }
 
 // UTC by TinyGPS++ points to the rising edge of PPS according to NEO6M reference manual
