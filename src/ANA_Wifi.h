@@ -3,7 +3,11 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
+
+#define FILE_CHECK_INTERVAL 60000
 extern WiFiMulti wifiMulti;
+bool wifi_allowed = true;
+ long last_file_check;
 
 void parse_show_file()
 {
@@ -107,23 +111,50 @@ void download_show_file()
     }
 
     http.end();
+    last_file_check = millis();
 }
 
 void check_wifi_task(void *)
 {
 
-    WiFi.mode(WIFI_STA);
-
     while (1)
     {
-        if (WiFi.status() != WL_CONNECTED)
+        if (clock_status != unset)
         {
-            wifiMulti.run();
-            if (WiFi.status() == WL_CONNECTED)
+            wifi_allowed = false;
+            long time_now = rtc.getEpoch();
+            if (!show_start || time_now > show_end)
             {
-                log_i("IP address: %s", WiFi.localIP().toString());
-                download_show_file();
+                wifi_allowed = true;
             }
+            if (time_now < show_start - 120)
+            {
+                wifi_allowed = true;
+            }
+        }
+
+        if (wifi_allowed)
+        {
+            if (WiFi.status() != WL_CONNECTED)
+            {
+                WiFi.mode(WIFI_STA);
+                wifiMulti.run();
+                if (WiFi.status() == WL_CONNECTED)
+                {
+                    log_i("IP address: %s", WiFi.localIP().toString());
+                    download_show_file();
+                }
+            }
+            else
+            {
+                if (millis()-last_file_check > FILE_CHECK_INTERVAL) {
+                    download_show_file();
+                }
+            }
+        }
+        else
+        {
+            WiFi.mode(WIFI_OFF);
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
