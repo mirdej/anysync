@@ -13,6 +13,7 @@ void parse_show_file()
     if (!f)
     {
         display_messages.push("FAIL SHOW FILE");
+        rtc.offset = 7200;
 
         log_e("Failed to open config file");
         return;
@@ -33,8 +34,10 @@ void parse_show_file()
     show_name = temp;
 
     long gmt_offset = doc["gmt_offset"];
-    
+
     log_v("GMT-offset %d", gmt_offset);
+    rtc.offset = gmt_offset;
+
     JsonArray array = doc["devices"].as<JsonArray>();
     for (JsonVariant v : array)
     {
@@ -104,7 +107,7 @@ void check_wifi_task(void *)
             {
 
                 log_i("IP address: %s", WiFi.localIP().toString());
-         //       download_show_file();
+                //       download_show_file();
             }
         }
         vTaskDelay(10000 / portTICK_PERIOD_MS);
