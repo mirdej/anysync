@@ -90,7 +90,7 @@ void download_show_file()
     String payload;
     HTTPClient http;
     int t = 0;
-    String url = command_server + "hello.php?mac=" + WiFi.macAddress();
+    String url = command_server + "hello.php?mac=" + WiFi.macAddress() + "&version=" + String(show_file_version);
     log_v("Connect to: %s", url.c_str());
     http.begin(url);
 
