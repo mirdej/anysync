@@ -3,11 +3,12 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
+String command_server =  "http://synkie.net/anysync/";
 
 #define FILE_CHECK_INTERVAL 60000
 extern WiFiMulti wifiMulti;
 bool wifi_allowed = true;
- long last_file_check;
+long last_file_check;
 
 void parse_show_file()
 {
@@ -41,6 +42,13 @@ void parse_show_file()
     const char *temp = doc["name"];
     show_name = temp;
 
+    midi_channel = doc["midi_channel"];
+    if (midi_channel > 0)
+    {
+        midi_channel--;
+        midi_channel %= 16;
+    }
+    log_v("Set MIDI channel to %d", midi_channel);
     long gmt_offset = doc["gmt_offset"];
 
     log_v("GMT-offset %d", gmt_offset);
@@ -76,7 +84,7 @@ void parse_show_file()
 
 void download_show_file()
 {
-    String url = "http://synkie.net/anysync/hello.php?mac=" + WiFi.macAddress();
+    String url =command_server + "hello.php?mac=" + WiFi.macAddress();
 
     HTTPClient http;
     log_i("Downloading config file");
@@ -147,7 +155,8 @@ void check_wifi_task(void *)
             }
             else
             {
-                if (millis()-last_file_check > FILE_CHECK_INTERVAL) {
+                if (millis() - last_file_check > FILE_CHECK_INTERVAL)
+                {
                     download_show_file();
                 }
             }

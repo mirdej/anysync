@@ -24,7 +24,7 @@ int show_start_hour, show_start_minute;
 
 std::queue<String> display_messages;
 
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0,
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R2,
                                          /* reset=*/U8X8_PIN_NONE,
                                          /* clock=*/PIN_SCL,
                                          /* data=*/PIN_SDA); // ESP32 Thing, HW I2C with pin remapping

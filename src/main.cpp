@@ -7,8 +7,6 @@
 
 ----------------------------------------------------------------------------------------*/
 
-
-
 #include "Arduino.h"
 #include <ESP32Time.h>
 
@@ -74,16 +72,18 @@ void parse_config()
     return;
   }
   f.close();
-/* 
-  const char *temp = doc["name"];
-  hostname = temp;
-  device_delay = doc["delay"];
-  device_delay %= 100000; */
+  /*
+    const char *temp = doc["name"];
+    hostname = temp;
+    device_delay = doc["delay"];
+    device_delay %= 100000; */
 
-  midi_channel = doc["midi_channel"];
-  midi_channel--;
-  midi_channel %= 16;
-  log_v("Set MIDI channel to %d", midi_channel);
+  if (doc.containsKey("server"))
+  {
+    const char *server = doc["server"];
+    command_server = server;
+  }
+
   JsonArray array = doc["passwords"].as<JsonArray>();
   for (JsonVariant v : array)
   {
@@ -119,10 +119,10 @@ void parse_config()
        tm.tm_sec = 0;
        tm.tm_isdst = -1; // disable summer time
        time_t t = mktime(&tm); */
- /*   t = 0;
-  }
+  /*   t = 0;
+   }
 
-  set_show_start(t); */
+   set_show_start(t); */
 
   display_messages.push("READ");
 }
@@ -190,7 +190,7 @@ void loop()
   static long last;
   if (millis() - last > 4000)
   {
-//    log_v("%04d %02d:%02d;%02d", gps.date.year(), gps.time.hour(), gps.time.minute(), gps.time.second());
+    //    log_v("%04d %02d:%02d;%02d", gps.date.year(), gps.time.hour(), gps.time.minute(), gps.time.second());
     last = millis();
     if (clock_status == unset)
     {
@@ -203,7 +203,6 @@ void loop()
     }
   }
 }
-
 
 void main_task(void *p)
 {
