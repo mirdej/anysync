@@ -3,12 +3,13 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-String command_server =  "http://synkie.net/anysync/";
+String command_server = "http://synkie.net/anysync/";
 
-#define FILE_CHECK_INTERVAL 60000
+#define FILE_CHECK_INTERVAL 15000
 extern WiFiMulti wifiMulti;
 bool wifi_allowed = true;
 long last_file_check;
+long show_file_version;
 
 void parse_show_file()
 {
@@ -41,6 +42,8 @@ void parse_show_file()
     log_v("Deserialized");
     const char *temp = doc["name"];
     show_name = temp;
+
+    show_file_version = doc["version"];
 
     midi_channel = doc["midi_channel"];
     if (midi_channel > 0)
@@ -84,14 +87,36 @@ void parse_show_file()
 
 void download_show_file()
 {
-    String url =command_server + "hello.php?mac=" + WiFi.macAddress();
-
+    String payload;
     HTTPClient http;
+    int t = 0;
+    String url = command_server + "hello.php?mac=" + WiFi.macAddress();
+    log_v("Connect to: %s", url.c_str());
+    http.begin(url);
+
+    int httpCode = http.GET();
+    if (httpCode > 0)
+    {
+        payload = http.getString();
+        log_v("Got: %s", payload);
+        t = payload.toInt();
+        log_v("File version: %d, Actual version: %d, is new? %d", show_file_version, t, (t > show_file_version));
+    }
+    http.end();
+    last_file_check = millis();
+
+    if ((t <= show_file_version))
+    {
+        return;
+    }
+
     log_i("Downloading config file");
     display_messages.push("DOWNLOAD");
+    url = command_server + "show.json";
+
     Serial.println(url);
     http.begin(url);
-    int httpCode = http.GET();
+    httpCode = http.GET();
     if (httpCode > 0)
     {
         if (httpCode == HTTP_CODE_OK)
@@ -102,7 +127,7 @@ void download_show_file()
 
             if (f)
             {
-                String payload = http.getString();
+                payload = http.getString();
                 f.print(payload);
                 f.close();
                 parse_show_file();
@@ -119,7 +144,6 @@ void download_show_file()
     }
 
     http.end();
-    last_file_check = millis();
 }
 
 void check_wifi_task(void *)
