@@ -28,7 +28,7 @@ void parse_show_file()
         log_e("Failed to open config file");
         return;
     }
-    DynamicJsonDocument doc(2048);
+    DynamicJsonDocument doc(20048);
     log_i("READ");
     DeserializationError error = deserializeJson(doc, f);
     if (error)
