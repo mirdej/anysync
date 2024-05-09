@@ -152,6 +152,7 @@ void setup()
   delay(1000); // prevent upload errors if program crashes esp
   SPI.begin(PIN_SCK, PIN_MISO, PIN_MOSI);
   SPI.setFrequency(1000000);
+  pinMode(PIN_MISO,INPUT_PULLUP);
   sd_card_present = SD.begin(PIN_SD_CS);
 
   init_display();
